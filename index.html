@@ -12,12 +12,10 @@
       padding: 0 12px;
       line-height: 1.6;
     }
-
     h1 {
       text-align: center;
       margin-bottom: 10px;
     }
-
     .toolbar {
       display: flex;
       flex-wrap: wrap;
@@ -26,85 +24,78 @@
       align-items: center;
       margin-bottom: 12px;
     }
-
     .toolbar-left {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
       align-items: center;
     }
-
     input[type="text"] {
       padding: 6px 10px;
       font-size: 14px;
-      min-width: 220px;
+      min-width: 180px;
     }
-
     button {
       padding: 6px 10px;
       font-size: 13px;
       cursor: pointer;
     }
-
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 8px;
       font-size: 14px;
     }
-
     thead {
       background: #f3f4f6;
     }
-
     th,
     td {
       border: 1px solid #e5e7eb;
       padding: 6px 8px;
       vertical-align: top;
     }
-
     th {
       text-align: left;
       white-space: nowrap;
     }
-
-    tr:nth-child(even) tbody {
-      background: #f9fafb;
-    }
-
     .word {
       font-weight: 600;
     }
-
     .pos {
       color: #6b7280;
       white-space: nowrap;
     }
-
     .favorite {
       cursor: pointer;
       font-size: 18px;
       color: #d1d5db;
     }
-
     .favorite.active {
       color: #facc15;
     }
-
     .badge {
       font-size: 12px;
       padding: 2px 6px;
       border-radius: 999px;
       background: #e5e7eb;
     }
-
     .status {
       font-size: 12px;
       color: #6b7280;
       margin-top: 4px;
     }
-
+    .panel {
+      border: 1px solid #e5e7eb;
+      padding: 8px;
+      margin-bottom: 12px;
+      background: #f9fafb;
+    }
+    .panel-title {
+      font-size: 13px;
+      color: #4b5563;
+      margin-bottom: 4px;
+    }
     @media (max-width: 640px) {
       table {
         font-size: 12px;
@@ -131,6 +122,17 @@
     </div>
   </div>
 
+  <!-- 在網頁上新增單字 -->
+  <div class="panel">
+    <div class="panel-title">
+      在這裡自己新增單字（會存到本機瀏覽器，下次打開還在）
+    </div>
+    <input id="newWord" placeholder="英文單字 (必填)" />
+    <input id="newPos" placeholder="詞性，例如 n./v. (可空白)" />
+    <input id="newZh" placeholder="中文解釋 (必填)" />
+    <button id="addWordBtn">新增單字</button>
+  </div>
+
   <table id="vocabTable">
     <thead>
       <tr>
@@ -139,6 +141,7 @@
         <th>中文</th>
         <th>例句 (英)</th>
         <th>例句 (中)</th>
+        <th>發音</th>
         <th>★</th>
       </tr>
     </thead>
@@ -148,8 +151,8 @@
   <p class="status" id="statusText"></p>
 
   <script>
-    // ====== 1. 單字資料（先放幾個示範，之後你可以自己增加） ======
-    const vocabList = [
+    // ====== 1. 預設單字 ======
+    const defaultVocab = [
       {
         word: "ability",
         pos: "n.",
@@ -180,8 +183,23 @@
       },
     ];
 
-    // ====== 2. 用 localStorage 記錄收藏 ======
+    // ====== 2. localStorage：自訂單字 & 收藏 ======
+    const CUSTOM_KEY = "toeic_custom_words";
     const FAVORITE_KEY = "toeic_favorites";
+
+    function loadCustomWords() {
+      try {
+        const raw = localStorage.getItem(CUSTOM_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveCustomWords(list) {
+      localStorage.setItem(CUSTOM_KEY, JSON.stringify(list));
+    }
+
     function loadFavorites() {
       try {
         const raw = localStorage.getItem(FAVORITE_KEY);
@@ -190,27 +208,40 @@
         return [];
       }
     }
+
     function saveFavorites(list) {
       localStorage.setItem(FAVORITE_KEY, JSON.stringify(list));
     }
 
+    let customWords = loadCustomWords();
     let favorites = loadFavorites();
     let showOnlyFavorites = false;
 
-    // ====== 3. 產生表格 ======
+    function getAllWords() {
+      return [...defaultVocab, ...customWords];
+    }
+
+    // ====== 3. DOM 取得 ======
     const tbody = document.querySelector("#vocabTable tbody");
     const searchInput = document.getElementById("searchInput");
     const favoriteToggle = document.getElementById("favoriteToggle");
     const countInfo = document.getElementById("countInfo");
     const statusText = document.getElementById("statusText");
 
+    const newWordInput = document.getElementById("newWord");
+    const newPosInput = document.getElementById("newPos");
+    const newZhInput = document.getElementById("newZh");
+    const addWordBtn = document.getElementById("addWordBtn");
+
+    // ====== 4. 表格渲染 ======
     function renderTable() {
       const keyword = searchInput.value.trim().toLowerCase();
       tbody.innerHTML = "";
 
+      const allWords = getAllWords();
       let shownCount = 0;
 
-      vocabList.forEach((item) => {
+      allWords.forEach((item) => {
         const inFavorite = favorites.includes(item.word);
         const textForSearch =
           (item.word + " " + item.zh + " " + item.pos).toLowerCase();
@@ -224,25 +255,27 @@
         }
 
         const tr = document.createElement("tr");
-
         tr.innerHTML = `
           <td class="word">${item.word}</td>
-          <td class="pos">${item.pos}</td>
-          <td>${item.zh}</td>
-          <td>${item.sentenceEn}</td>
-          <td>${item.sentenceZh}</td>
+          <td class="pos">${item.pos || ""}</td>
+          <td>${item.zh || ""}</td>
+          <td>${item.sentenceEn || ""}</td>
+          <td>${item.sentenceZh || ""}</td>
+          <td style="text-align:center;">
+            <button class="speak-btn" data-word="${item.word}">🔊</button>
+          </td>
           <td style="text-align:center;">
             <span class="favorite ${inFavorite ? "active" : ""}" data-word="${
           item.word
         }">★</span>
           </td>
         `;
-
         tbody.appendChild(tr);
         shownCount++;
       });
 
-      countInfo.textContent = `顯示 ${shownCount} 筆 / 全部 ${vocabList.length} 筆`;
+      countInfo.textContent = `顯示 ${shownCount} 筆 / 全部 ${allWords.length} 筆`;
+
       if (shownCount === 0) {
         statusText.textContent = "沒有符合搜尋或條件的單字。";
       } else {
@@ -250,7 +283,18 @@
       }
     }
 
-    // ====== 4. 事件監聽：搜尋 & 收藏 ======
+    // ====== 5. 發音功能 ======
+    function speak(text) {
+      if (!("speechSynthesis" in window)) {
+        alert("此瀏覽器不支援語音朗讀");
+        return;
+      }
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = "en-US";
+      window.speechSynthesis.speak(utter);
+    }
+
+    // ====== 6. 事件監聽 ======
     searchInput.addEventListener("input", () => {
       renderTable();
     });
@@ -261,8 +305,41 @@
       renderTable();
     });
 
+    addWordBtn.addEventListener("click", () => {
+      const word = newWordInput.value.trim();
+      const pos = newPosInput.value.trim() || "n.";
+      const zh = newZhInput.value.trim();
+
+      if (!word || !zh) {
+        alert("請至少填『英文單字』和『中文解釋』");
+        return;
+      }
+
+      const newItem = {
+        word,
+        pos,
+        zh,
+        sentenceEn: "",
+        sentenceZh: "",
+      };
+
+      customWords.push(newItem);
+      saveCustomWords(customWords);
+      newWordInput.value = "";
+      newPosInput.value = "";
+      newZhInput.value = "";
+      renderTable();
+    });
+
     tbody.addEventListener("click", (e) => {
       const target = e.target;
+
+      if (target.classList.contains("speak-btn")) {
+        const word = target.getAttribute("data-word");
+        speak(word);
+        return;
+      }
+
       if (target.classList.contains("favorite")) {
         const word = target.getAttribute("data-word");
         if (favorites.includes(word)) {
@@ -275,7 +352,7 @@
       }
     });
 
-    // ====== 5. 一開始先畫一次表格 ======
+    // ====== 7. 初始化 ======
     renderTable();
   </script>
 </body>
