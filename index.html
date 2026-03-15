@@ -110,9 +110,9 @@ tr:hover { background-color: #fdfdfd; }
       <button id="filterBtn" class="btn btn-filter" onclick="toggleFilter()">⭐ 只看收藏</button>
       <button class="btn btn-add" onclick="manualAdd()">＋ 新增</button>
       <button class="btn btn-reset" onclick="resetData()">還原目前單元</button>
-      <button id="hideWordBtn" class="btn btn-hide" onclick="toggleHideWord()">🙈 隱藏單字＋中文</button>
-      <button id="hideEnBtn" class="btn btn-hide" onclick="toggleHideEn()">🙈 隱藏英文例句</button>
-      <button id="hideChBtn" class="btn btn-hide" onclick="toggleHideCh()">🙈 隱藏中文翻譯</button>
+      <button id="hideWordBtn" class="btn btn-hide" onclick="toggleHideWord()">🙈 隱藏單字</button>
+      <button id="hideDefBtn" class="btn btn-hide" onclick="toggleHideDef()">🙈 隱藏中文定義</button>
+      <button id="hideChBtn" class="btn btn-hide" onclick="toggleHideCh()">🙈 隱藏中文例句</button>
       <div class="range-controls">
         <span>顯示第</span>
         <input type="number" id="rangeStart" min="1" value="1" onchange="render()">
@@ -211,9 +211,9 @@ const unitDefaults = {
 let currentUnit = 1;
 let vocabs = loadUnitData(currentUnit);
 let onlyShowFavorites = false;
-let hideEnglish = false;
+let hideWord = false;
+let hideDef = false;
 let hideChinese = false;
-let hideWordAndChinese = false;
 
 function unitKey(unit) {
   return `myVocabDB_v4_unit_${unit}`;
@@ -278,23 +278,23 @@ function toggleFilter() {
 }
 
 function toggleHideWord() {
-  hideWordAndChinese = !hideWordAndChinese;
+  hideWord = !hideWord;
   const btn = document.getElementById('hideWordBtn');
-  btn.textContent = hideWordAndChinese ? "👀 顯示單字＋中文" : "🙈 隱藏單字＋中文";
+  btn.textContent = hideWord ? "👀 顯示單字" : "🙈 隱藏單字";
   render();
 }
 
-function toggleHideEn() {
-  hideEnglish = !hideEnglish;
-  const btn = document.getElementById('hideEnBtn');
-  btn.textContent = hideEnglish ? "👀 顯示英文例句" : "🙈 隱藏英文例句";
+function toggleHideDef() {
+  hideDef = !hideDef;
+  const btn = document.getElementById('hideDefBtn');
+  btn.textContent = hideDef ? "👀 顯示中文定義" : "🙈 隱藏中文定義";
   render();
 }
 
 function toggleHideCh() {
   hideChinese = !hideChinese;
   const btn = document.getElementById('hideChBtn');
-  btn.textContent = hideChinese ? "👀 顯示中文翻譯" : "🙈 隱藏中文翻譯";
+  btn.textContent = hideChinese ? "👀 顯示中文例句" : "🙈 隱藏中文例句";
   render();
 }
 
@@ -318,24 +318,26 @@ function render() {
   const sliced = filtered.slice(startIndex - 1, endIndex); // [web:92][web:93]
 
   body.innerHTML = sliced.map((item, idx) => {
-    const globalIndex = startIndex + idx; // 編號：在整個單元裡的第幾個
+    const globalIndex = startIndex + idx;
     const posClass = item.pos ? `pos-${item.pos.charAt(0).toLowerCase()}` : 'pos-a';
 
-    const wordContent = hideWordAndChinese
+    // 單字
+    const wordContent = hideWord
       ? `<span class="word-text hidden-text" data-full="${item.word}">點一下顯示單字</span>`
       : `<span class="word-text" data-full="${item.word}">${item.word}</span>`;
 
-    const chineseContent = hideWordAndChinese
+    // 中文定義
+    const defContent = hideDef
       ? `<span class="hidden-text" data-full="${item.chinese || ''}">點一下顯示中文</span>`
       : `<span data-full="${item.chinese || ''}">${item.chinese || ''}</span>`;
 
-    const enText = hideEnglish
-      ? `<span class="example-en hidden-text" data-full="${item.exampleEn || ''}">點一下顯示英文</span>`
-      : `<span class="example-en" data-full="${item.exampleEn || ''}">${item.exampleEn || ''}</span>`;
-
+    // 中文例句
     const chText = hideChinese
-      ? `<span class="example-ch hidden-text" data-full="${item.exampleCh || ''}">點一下顯示中文</span>`
+      ? `<span class="example-ch hidden-text" data-full="${item.exampleCh || ''}">點一下顯示中文例句</span>`
       : `<span class="example-ch" data-full="${item.exampleCh || ''}">${item.exampleCh || ''}</span>`;
+
+    // 英文例句永遠顯示
+    const enText = `<span class="example-en" data-full="${item.exampleEn || ''}">${item.exampleEn || ''}</span>`;
 
     const safeWord = (item.word || '').replace(/'/g, "\\'");
     const safeExampleEn = (item.exampleEn || '').replace(/'/g, "\\'");
@@ -351,7 +353,7 @@ function render() {
     </div>
   </td>
   <td><span class="pos-tag ${posClass}">${item.pos || ''}</span></td>
-  <td>${chineseContent}</td>
+  <td>${defContent}</td>
   <td>
     <div style="display:flex; gap:10px; align-items:flex-start;">
       <button class="audio-btn" style="width:26px; height:26px; font-size:0.7rem;"
@@ -381,10 +383,8 @@ function render() {
       } else if (span.classList.contains('reveal')) {
         span.classList.add('hidden-text');
         span.classList.remove('reveal');
-        if (span.classList.contains('example-en')) {
-          span.textContent = '點一下顯示英文';
-        } else if (span.classList.contains('example-ch')) {
-          span.textContent = '點一下顯示中文';
+        if (span.classList.contains('example-ch')) {
+          span.textContent = '點一下顯示中文例句';
         } else if (span.closest('td') && span.closest('td').cellIndex === 1) {
           span.textContent = '點一下顯示單字';
         } else {
