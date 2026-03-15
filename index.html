@@ -1,11 +1,282 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>多益單字小網站</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      max-width: 960px;
+      margin: 20px auto;
+      padding: 0 12px;
+      line-height: 1.6;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .toolbar-left {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    input[type="text"] {
+      padding: 6px 10px;
+      font-size: 14px;
+      min-width: 220px;
+    }
+
+    button {
+      padding: 6px 10px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+
+    thead {
+      background: #f3f4f6;
+    }
+
+    th,
+    td {
+      border: 1px solid #e5e7eb;
+      padding: 6px 8px;
+      vertical-align: top;
+    }
+
+    th {
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    tr:nth-child(even) tbody {
+      background: #f9fafb;
+    }
+
+    .word {
+      font-weight: 600;
+    }
+
+    .pos {
+      color: #6b7280;
+      white-space: nowrap;
+    }
+
+    .favorite {
+      cursor: pointer;
+      font-size: 18px;
+      color: #d1d5db;
+    }
+
+    .favorite.active {
+      color: #facc15;
+    }
+
+    .badge {
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: #e5e7eb;
+    }
+
+    .status {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 640px) {
+      table {
+        font-size: 12px;
+      }
+      th,
+      td {
+        padding: 4px 6px;
+      }
+    }
+  </style>
 </head>
 <body>
   <h1>多益單字小網站</h1>
-  <p>之後我們會在這裡放單字表。</p>
+
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <input
+        id="searchInput"
+        type="text"
+        placeholder="搜尋英文或中文，例如 ability / 能力"
+      />
+      <button id="favoriteToggle">只看★收藏</button>
+      <span class="badge" id="countInfo"></span>
+    </div>
+  </div>
+
+  <table id="vocabTable">
+    <thead>
+      <tr>
+        <th>單字</th>
+        <th>詞性</th>
+        <th>中文</th>
+        <th>例句 (英)</th>
+        <th>例句 (中)</th>
+        <th>★</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <p class="status" id="statusText"></p>
+
+  <script>
+    // ====== 1. 單字資料（先放幾個示範，之後你可以自己增加） ======
+    const vocabList = [
+      {
+        word: "ability",
+        pos: "n.",
+        zh: "能力；才能",
+        sentenceEn: "She has the ability to solve complex problems quickly.",
+        sentenceZh: "她有能力很快解決複雜的問題。",
+      },
+      {
+        word: "agree",
+        pos: "v.",
+        zh: "同意；贊成",
+        sentenceEn: "We all agree with your suggestion.",
+        sentenceZh: "我們都同意你的建議。",
+      },
+      {
+        word: "budget",
+        pos: "n.",
+        zh: "預算",
+        sentenceEn: "The company reduced its marketing budget this year.",
+        sentenceZh: "公司今年縮減了行銷預算。",
+      },
+      {
+        word: "conference",
+        pos: "n.",
+        zh: "會議；研討會",
+        sentenceEn: "The annual sales conference will be held in Taipei.",
+        sentenceZh: "年度業務會議將在台北舉行。",
+      },
+    ];
+
+    // ====== 2. 用 localStorage 記錄收藏 ======
+    const FAVORITE_KEY = "toeic_favorites";
+    function loadFavorites() {
+      try {
+        const raw = localStorage.getItem(FAVORITE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+    function saveFavorites(list) {
+      localStorage.setItem(FAVORITE_KEY, JSON.stringify(list));
+    }
+
+    let favorites = loadFavorites();
+    let showOnlyFavorites = false;
+
+    // ====== 3. 產生表格 ======
+    const tbody = document.querySelector("#vocabTable tbody");
+    const searchInput = document.getElementById("searchInput");
+    const favoriteToggle = document.getElementById("favoriteToggle");
+    const countInfo = document.getElementById("countInfo");
+    const statusText = document.getElementById("statusText");
+
+    function renderTable() {
+      const keyword = searchInput.value.trim().toLowerCase();
+      tbody.innerHTML = "";
+
+      let shownCount = 0;
+
+      vocabList.forEach((item) => {
+        const inFavorite = favorites.includes(item.word);
+        const textForSearch =
+          (item.word + " " + item.zh + " " + item.pos).toLowerCase();
+
+        if (keyword && !textForSearch.includes(keyword)) {
+          return;
+        }
+
+        if (showOnlyFavorites && !inFavorite) {
+          return;
+        }
+
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td class="word">${item.word}</td>
+          <td class="pos">${item.pos}</td>
+          <td>${item.zh}</td>
+          <td>${item.sentenceEn}</td>
+          <td>${item.sentenceZh}</td>
+          <td style="text-align:center;">
+            <span class="favorite ${inFavorite ? "active" : ""}" data-word="${
+          item.word
+        }">★</span>
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+        shownCount++;
+      });
+
+      countInfo.textContent = `顯示 ${shownCount} 筆 / 全部 ${vocabList.length} 筆`;
+      if (shownCount === 0) {
+        statusText.textContent = "沒有符合搜尋或條件的單字。";
+      } else {
+        statusText.textContent = "";
+      }
+    }
+
+    // ====== 4. 事件監聽：搜尋 & 收藏 ======
+    searchInput.addEventListener("input", () => {
+      renderTable();
+    });
+
+    favoriteToggle.addEventListener("click", () => {
+      showOnlyFavorites = !showOnlyFavorites;
+      favoriteToggle.textContent = showOnlyFavorites ? "顯示全部" : "只看★收藏";
+      renderTable();
+    });
+
+    tbody.addEventListener("click", (e) => {
+      const target = e.target;
+      if (target.classList.contains("favorite")) {
+        const word = target.getAttribute("data-word");
+        if (favorites.includes(word)) {
+          favorites = favorites.filter((w) => w !== word);
+        } else {
+          favorites.push(word);
+        }
+        saveFavorites(favorites);
+        renderTable();
+      }
+    });
+
+    // ====== 5. 一開始先畫一次表格 ======
+    renderTable();
+  </script>
 </body>
 </html>
