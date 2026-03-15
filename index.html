@@ -38,6 +38,21 @@ input#searchInput:focus { border-color: var(--primary); }
   border-color: var(--primary);
 }
 
+/* 範圍控制區 */
+.range-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #64748b;
+}
+.range-controls input {
+  width: 60px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
 /* 表格樣式 */
 table { width: 100%; border-collapse: collapse; }
 th { background-color: #f8fafc; padding: 15px; text-align: left; border-bottom: 2px solid #e2e8f0; color: #64748b; }
@@ -48,21 +63,21 @@ tr:hover { background-color: #fdfdfd; }
 .word-box { display: flex; align-items: center; gap: 10px; }
 .star-icon { cursor: pointer; font-size: 1.4rem; color: #cbd5e1; transition: 0.2s; user-select: none; }
 .star-icon.active { color: var(--star); }
-.word-text { font-weight: 800; color: var(--primary); font-size: 1.2rem; }
+.word-text { font-weight: 800; color: #2563eb; font-size: 1.2rem; }
 .pos-tag { padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; color: white; background: #94a3b8; font-weight: bold; }
 .pos-n { background: #f59e0b; }
 .pos-v { background: #3b82f6; }
-.pos-a { background: #10b981; } /* 形容詞、其他 */
+.pos-a { background: #10b981; }
 
 /* 發音按鈕 */
-.audio-btn { background: #f1f5f9; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; color: var(--primary); }
-.audio-btn:hover { background: var(--primary); color: white; }
+.audio-btn { background: #f1f5f9; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; color: #2563eb; }
+.audio-btn:hover { background: #2563eb; color: white; }
 
 /* 例句區 */
 .example-en { font-style: italic; color: #475569; margin-bottom: 4px; display: block; cursor: pointer; }
 .example-ch { color: #94a3b8; font-size: 0.9rem; display: block; cursor: pointer; }
 
-/* 遮住文字用的樣式 */
+/* 遮住文字 */
 .hidden-text {
   background: #cbd5e1;
   color: #cbd5e1;
@@ -85,7 +100,7 @@ tr:hover { background-color: #fdfdfd; }
 <body>
 <div class="container">
   <div class="header">
-    <h1>🚀 TOEIC必考單字與片語</h1>
+    <h1>TOEIC必考單字與片語</h1>
 
     <!-- 單元分頁 -->
     <div id="unitTabs" class="unit-tabs"></div>
@@ -95,18 +110,27 @@ tr:hover { background-color: #fdfdfd; }
       <button id="filterBtn" class="btn btn-filter" onclick="toggleFilter()">⭐ 只看收藏</button>
       <button class="btn btn-add" onclick="manualAdd()">＋ 新增</button>
       <button class="btn btn-reset" onclick="resetData()">還原目前單元</button>
+      <button id="hideWordBtn" class="btn btn-hide" onclick="toggleHideWord()">🙈 隱藏單字＋中文</button>
       <button id="hideEnBtn" class="btn btn-hide" onclick="toggleHideEn()">🙈 隱藏英文例句</button>
       <button id="hideChBtn" class="btn btn-hide" onclick="toggleHideCh()">🙈 隱藏中文翻譯</button>
+      <div class="range-controls">
+        <span>顯示第</span>
+        <input type="number" id="rangeStart" min="1" value="1" onchange="render()">
+        <span>到</span>
+        <input type="number" id="rangeEnd" min="1" value="999" onchange="render()">
+        <span>筆</span>
+      </div>
     </div>
   </div>
 
   <table>
     <thead>
       <tr>
-        <th width="20%">單字</th>
+        <th width="6%">#</th>
+        <th width="17%">單字</th>
         <th width="10%">詞性</th>
         <th width="20%">中文定義</th>
-        <th width="45%">例句 (中英對照)</th>
+        <th width="42%">例句 (中英對照)</th>
         <th width="5%"></th>
       </tr>
     </thead>
@@ -115,8 +139,7 @@ tr:hover { background-color: #fdfdfd; }
 </div>
 
 <script>
-// ====== 1. 所有單元的預設資料 ======
-// 目前先把你原本這一組當成 Unit 1，其它單元先留空陣列
+// ====== 1. 單元預設資料（Unit 1 同你原本的） ======
 const unitDefaults = {
   1: [
     { word: "ability", pos: "n.", chinese: "能力；才能", exampleEn: "She's a woman of considerable abilities.", exampleCh: "她是個才華橫溢的女性。", favorite: false },
@@ -184,12 +207,13 @@ const unitDefaults = {
   13: []
 };
 
-// ====== 2. 目前單元 & localStorage key ======
+// ====== 2. 狀態 & localStorage ======
 let currentUnit = 1;
 let vocabs = loadUnitData(currentUnit);
 let onlyShowFavorites = false;
 let hideEnglish = false;
 let hideChinese = false;
+let hideWordAndChinese = false;
 
 function unitKey(unit) {
   return `myVocabDB_v4_unit_${unit}`;
@@ -233,11 +257,13 @@ function switchUnit(unit) {
   onlyShowFavorites = false;
   document.getElementById('filterBtn').classList.remove('active');
   document.getElementById('filterBtn').innerHTML = "⭐ 只看收藏";
+  document.getElementById('rangeStart').value = 1;
+  document.getElementById('rangeEnd').value = 999;
   renderUnitTabs();
   render();
 }
 
-// ====== 4. 其它控制 ======
+// ====== 4. 控制按鈕 ======
 function toggleStar(index) {
   vocabs[index].favorite = !vocabs[index].favorite;
   save();
@@ -248,6 +274,13 @@ function toggleFilter() {
   const btn = document.getElementById('filterBtn');
   btn.classList.toggle('active', onlyShowFavorites);
   btn.innerHTML = onlyShowFavorites ? "★ 收藏模式" : "⭐ 只看收藏";
+  render();
+}
+
+function toggleHideWord() {
+  hideWordAndChinese = !hideWordAndChinese;
+  const btn = document.getElementById('hideWordBtn');
+  btn.textContent = hideWordAndChinese ? "👀 顯示單字＋中文" : "🙈 隱藏單字＋中文";
   render();
 }
 
@@ -265,18 +298,36 @@ function toggleHideCh() {
   render();
 }
 
-// ====== 5. 渲染表格 ======
+// ====== 5. 渲染表格（含編號＋範圍） ======
 function render() {
   const query = document.getElementById('searchInput').value.toLowerCase();
   const body = document.getElementById('vocabBody');
+  const rangeStart = parseInt(document.getElementById('rangeStart').value || '1', 10);
+  const rangeEnd = parseInt(document.getElementById('rangeEnd').value || '999', 10);
+
   const filtered = vocabs.filter((v) => {
     const matchesSearch = v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query);
     const matchesFilter = onlyShowFavorites ? v.favorite : true;
     return matchesSearch && matchesFilter;
   });
 
-  body.innerHTML = filtered.map((item, idx) => {
+  const total = filtered.length;
+  const startIndex = Math.max(1, rangeStart);
+  const endIndex = Math.min(rangeEnd, total);
+
+  const sliced = filtered.slice(startIndex - 1, endIndex); // [web:92][web:93]
+
+  body.innerHTML = sliced.map((item, idx) => {
+    const globalIndex = startIndex + idx; // 編號：在整個單元裡的第幾個
     const posClass = item.pos ? `pos-${item.pos.charAt(0).toLowerCase()}` : 'pos-a';
+
+    const wordContent = hideWordAndChinese
+      ? `<span class="word-text hidden-text" data-full="${item.word}">點一下顯示單字</span>`
+      : `<span class="word-text" data-full="${item.word}">${item.word}</span>`;
+
+    const chineseContent = hideWordAndChinese
+      ? `<span class="hidden-text" data-full="${item.chinese || ''}">點一下顯示中文</span>`
+      : `<span data-full="${item.chinese || ''}">${item.chinese || ''}</span>`;
 
     const enText = hideEnglish
       ? `<span class="example-en hidden-text" data-full="${item.exampleEn || ''}">點一下顯示英文</span>`
@@ -291,15 +342,16 @@ function render() {
 
     return `
 <tr>
+  <td>${globalIndex}</td>
   <td>
     <div class="word-box">
-      <span class="star-icon ${item.favorite ? 'active' : ''}" onclick="toggleStar(${idx})">★</span>
+      <span class="star-icon ${item.favorite ? 'active' : ''}" onclick="toggleStarByWord('${safeWord}')">★</span>
       <button class="audio-btn" onclick="speak('${safeWord}', 0.8)">🔊</button>
-      <span class="word-text">${item.word}</span>
+      ${wordContent}
     </div>
   </td>
   <td><span class="pos-tag ${posClass}">${item.pos || ''}</span></td>
-  <td>${item.chinese || ''}</td>
+  <td>${chineseContent}</td>
   <td>
     <div style="display:flex; gap:10px; align-items:flex-start;">
       <button class="audio-btn" style="width:26px; height:26px; font-size:0.7rem;"
@@ -311,13 +363,15 @@ function render() {
     </div>
   </td>
   <td>
-    <button style="border:none; background:none; cursor:pointer; color:#eee;" onclick="deleteWord(${idx})">🗑️</button>
+    <button style="border:none; background:none; cursor:pointer; color:#eee;" onclick="deleteByWord('${safeWord}')">🗑️</button>
   </td>
 </tr>`;
   }).join('');
 
-  // 點例句時切換顯示/隱藏
-  body.querySelectorAll('.example-en, .example-ch').forEach(span => {
+  // 點被隱藏的文字時切換顯示/隱藏
+  body.querySelectorAll('.hidden-text, .word-text, td span, .example-en, .example-ch').forEach(span => {
+    const hasData = span.getAttribute('data-full') !== null;
+    if (!hasData) return;
     span.addEventListener('click', () => {
       const full = span.getAttribute('data-full') || '';
       if (span.classList.contains('hidden-text')) {
@@ -327,10 +381,35 @@ function render() {
       } else if (span.classList.contains('reveal')) {
         span.classList.add('hidden-text');
         span.classList.remove('reveal');
-        span.textContent = span.classList.contains('example-en') ? '點一下顯示英文' : '點一下顯示中文';
+        if (span.classList.contains('example-en')) {
+          span.textContent = '點一下顯示英文';
+        } else if (span.classList.contains('example-ch')) {
+          span.textContent = '點一下顯示中文';
+        } else if (span.closest('td') && span.closest('td').cellIndex === 1) {
+          span.textContent = '點一下顯示單字';
+        } else {
+          span.textContent = '點一下顯示中文';
+        }
       }
     });
   });
+}
+
+// 依單字字串找到並切換收藏
+function toggleStarByWord(word) {
+  const idx = vocabs.findIndex(v => v.word === word);
+  if (idx === -1) return;
+  vocabs[idx].favorite = !vocabs[idx].favorite;
+  save();
+}
+
+// 依單字刪除
+function deleteByWord(word) {
+  if (!confirm("刪除這個單字嗎？")) return;
+  const idx = vocabs.findIndex(v => v.word === word);
+  if (idx === -1) return;
+  vocabs.splice(idx, 1);
+  save();
 }
 
 // ====== 6. 其他功能 ======
@@ -351,10 +430,6 @@ function manualAdd() {
   const exampleCh = prompt("中文翻譯:");
   vocabs.unshift({ word, pos, chinese, exampleEn, exampleCh, favorite: false });
   save();
-}
-
-function deleteWord(index) {
-  if (confirm("刪除這個單字嗎？")) { vocabs.splice(index, 1); save(); }
 }
 
 function resetData() {
