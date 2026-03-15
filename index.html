@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -11,16 +10,33 @@ body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background-col
 .container { max-width: 1250px; margin: auto; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
 
 /* 頂部控制區 */
-.header { display: flex; flex-direction: column; align-items: center; margin-bottom: 25px; }
-.controls { display: flex; gap: 10px; width: 100%; margin-top: 15px; }
-input#searchInput { flex-grow: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; outline: none; transition: 0.3s; }
+.header { display: flex; flex-direction: column; align-items: center; margin-bottom: 15px; }
+.controls { display: flex; gap: 10px; width: 100%; margin-top: 10px; flex-wrap: wrap; }
+input#searchInput { flex-grow: 1; min-width: 180px; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; outline: none; transition: 0.3s; }
 input#searchInput:focus { border-color: var(--primary); }
-
-.btn { padding: 10px 18px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 5px; }
+.btn { padding: 8px 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 5px; font-size: 13px; }
 .btn-filter { background-color: white; border: 2px solid #e2e8f0; color: #64748b; }
 .btn-filter.active { background-color: var(--star); color: #856404; border-color: #f1c40f; }
 .btn-add { background-color: #10b981; color: white; }
-.btn-reset { background-color: #fee2e2; color: #ef4444; font-size: 12px; }
+.btn-reset { background-color: #fee2e2; color: #ef4444; font-size: 11px; }
+.btn-hide { background-color: #e0f2fe; color: #0369a1; }
+
+/* 單元分頁 */
+.unit-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 6px; }
+.unit-tab {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  font-size: 12px;
+  cursor: pointer;
+  background: #f8fafc;
+  color: #64748b;
+}
+.unit-tab.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
 
 /* 表格樣式 */
 table { width: 100%; border-collapse: collapse; }
@@ -33,195 +49,324 @@ tr:hover { background-color: #fdfdfd; }
 .star-icon { cursor: pointer; font-size: 1.4rem; color: #cbd5e1; transition: 0.2s; user-select: none; }
 .star-icon.active { color: var(--star); }
 .word-text { font-weight: 800; color: var(--primary); font-size: 1.2rem; }
-
 .pos-tag { padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; color: white; background: #94a3b8; font-weight: bold; }
 .pos-n { background: #f59e0b; }
 .pos-v { background: #3b82f6; }
-.pos-adj { background: #10b981; }
+.pos-a { background: #10b981; } /* 形容詞、其他 */
 
+/* 發音按鈕 */
 .audio-btn { background: #f1f5f9; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; color: var(--primary); }
 .audio-btn:hover { background: var(--primary); color: white; }
 
 /* 例句區 */
-.example-en { font-style: italic; color: #475569; margin-bottom: 4px; display: block; }
-.example-ch { color: #94a3b8; font-size: 0.9rem; display: block; }
+.example-en { font-style: italic; color: #475569; margin-bottom: 4px; display: block; cursor: pointer; }
+.example-ch { color: #94a3b8; font-size: 0.9rem; display: block; cursor: pointer; }
 
+/* 遮住文字用的樣式 */
+.hidden-text {
+  background: #cbd5e1;
+  color: #cbd5e1;
+  border-radius: 4px;
+  padding: 0 3px;
+}
+.hidden-text.reveal {
+  color: inherit;
+}
+
+/* 手機 */
 @media (max-width: 900px) {
-.controls { flex-wrap: wrap; }
-th:nth-child(2), th:nth-child(3) { display: none; }
-td { display: block; border: none; }
-tr { display: block; border-bottom: 4px solid #f1f5f9; padding: 10px 0; }
+  .controls { flex-wrap: wrap; }
+  th:nth-child(2), th:nth-child(3) { display: none; }
+  td { display: block; border: none; }
+  tr { display: block; border-bottom: 4px solid #f1f5f9; padding: 10px 0; }
 }
 </style>
 </head>
 <body>
-
 <div class="container">
-<div class="header">
-<h1>🚀 多益700分</h1>
-<div class="controls">
-<input type="text" id="searchInput" placeholder="搜尋單字、中文..." onkeyup="render()">
-<button id="filterBtn" class="btn btn-filter" onclick="toggleFilter()">⭐ 只看收藏</button>
-<button class="btn btn-add" onclick="manualAdd()">＋ 新增</button>
-<button class="btn btn-reset" onclick="resetData()">還原預設</button>
-</div>
-</div>
+  <div class="header">
+    <h1>🚀 多益700分</h1>
 
-<table>
-<thead>
-<tr>
-<th width="20%">單字</th>
-<th width="10%">詞性</th>
-<th width="20%">中文定義</th>
-<th width="45%">例句 (中英對照)</th>
-<th width="5%"></th>
-</tr>
-</thead>
-<tbody id="vocabBody"></tbody>
-</table>
+    <!-- 單元分頁 -->
+    <div id="unitTabs" class="unit-tabs"></div>
+
+    <div class="controls">
+      <input type="text" id="searchInput" placeholder="搜尋單字、中文..." onkeyup="render()">
+      <button id="filterBtn" class="btn btn-filter" onclick="toggleFilter()">⭐ 只看收藏</button>
+      <button class="btn btn-add" onclick="manualAdd()">＋ 新增</button>
+      <button class="btn btn-reset" onclick="resetData()">還原目前單元</button>
+      <button id="hideEnBtn" class="btn btn-hide" onclick="toggleHideEn()">🙈 隱藏英文例句</button>
+      <button id="hideChBtn" class="btn btn-hide" onclick="toggleHideCh()">🙈 隱藏中文翻譯</button>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th width="20%">單字</th>
+        <th width="10%">詞性</th>
+        <th width="20%">中文定義</th>
+        <th width="45%">例句 (中英對照)</th>
+        <th width="5%"></th>
+      </tr>
+    </thead>
+    <tbody id="vocabBody"></tbody>
+  </table>
 </div>
 
 <script>
-const defaultData = [
-{ word: "ability", pos: "n.", chinese: "能力；才能", exampleEn: "She's a woman of considerable abilities.", exampleCh: "她是個才華橫溢的女性。", favorite: false },
-{ word: "acquisition", pos: "n.", chinese: "收購；獲得", exampleEn: "The acquisition of a small publishing firm.", exampleCh: "收購了一家小型出版商。", favorite: false },
-{ word: "affiliated", pos: "adj.", chinese: "附屬的；隸屬的", exampleEn: "The school is affiliated with a national association.", exampleCh: "該校隸屬於一個全國協會。", favorite: false },
-{ word: "allocate", pos: "v.", chinese: "分派；分配", exampleEn: "Allocating £10 million for health education.", exampleCh: "撥款一千萬英鎊用於健康教育。", favorite: false },
-{ word: "allocation", pos: "n.", chinese: "分配；額度", exampleEn: "The allocation of resources/funds/time.", exampleCh: "資源、資金或時間的分配。", favorite: false },
-{ word: "allowance", pos: "n.", chinese: "津貼；限額", exampleEn: "The perks include a travel allowance.", exampleCh: "額外待遇包括差旅津貼。", favorite: false },
-{ word: "alternate", pos: "v./adj.", chinese: "輪流；交替的", exampleEn: "He alternated working in the office with tours overseas.", exampleCh: "他輪流在辦公室工作和海外視察。", favorite: false },
-{ word: "alternative", pos: "n./adj.", chinese: "代用方案；替代的", exampleEn: "I have no alternative but to ask you to leave.", exampleCh: "我別無選擇，只能請你離開。", favorite: false },
-{ word: "alumni", pos: "n.", chinese: "校友 (複數)", exampleEn: "Several famous alumni agreed to help raise money.", exampleCh: "幾位知名校友同意協助籌款。", favorite: false },
-{ word: "arrange", pos: "v.", chinese: "安排；準備", exampleEn: "The meeting has been arranged for Wednesday.", exampleCh: "會議已安排在週三舉行。", favorite: false },
-{ word: "arrangement", pos: "n.", chinese: "安排；籌劃", exampleEn: "They'd made all the arrangements for the party.", exampleCh: "他們已為派對做好了一切準備。", favorite: false },
-{ word: "aspect", pos: "n.", chinese: "方面；層面", exampleEn: "Which aspects of the job do you most enjoy?", exampleCh: "你最喜歡這份工作的哪些方面？", favorite: false },
-{ word: "assist", pos: "v.", chinese: "幫助；協助", exampleEn: "You will be expected to assist the editor.", exampleCh: "你將被要求協助編輯。", favorite: false },
-{ word: "assistance", pos: "n.", chinese: "幫助；援助", exampleEn: "The company needs more financial assistance.", exampleCh: "公司需要更多財務援助。", favorite: false },
-{ word: "association", pos: "n.", chinese: "協會；社團", exampleEn: "The British Medical Association is campaigning for a ban.", exampleCh: "英國醫學會正在發起禁用運動。", favorite: false },
-{ word: "attribute", pos: "n./v.", chinese: "特性；歸因於", exampleEn: "The doctors attributed the illness to a virus.", exampleCh: "醫生將病因歸結為病毒。", favorite: false },
-{ word: "authority", pos: "n.", chinese: "權力；權威", exampleEn: "We need to get the support of someone in authority.", exampleCh: "我們需要得到權威人士的支持。", favorite: false },
-{ word: "authorize", pos: "v.", chinese: "批准；授權", exampleEn: "Who authorized this expenditure?", exampleCh: "誰批准了這筆開支？", favorite: false },
-{ word: "belongings", pos: "n.", chinese: "財產；行李", exampleEn: "I put a few personal belongings in a bag.", exampleCh: "我把一些個人物品裝進袋子。", favorite: false },
-{ word: "beneficial", pos: "adj.", chinese: "有利的", exampleEn: "The improvement had a beneficial effect.", exampleCh: "這項改進產生了有利的影響。", favorite: false },
-{ word: "benefit", pos: "n./v.", chinese: "利益；好處", exampleEn: "One of the benefits of travel is learning to cope.", exampleCh: "旅遊的好處之一是學會應變。", favorite: false },
-{ word: "board", pos: "n.", chinese: "董事會；委員會", exampleEn: "She's now on the board as a member.", exampleCh: "她現在是董事會的成員。", favorite: false },
-{ word: "bonus", pos: "n.", chinese: "獎金；額外好處", exampleEn: "The job is great, and the bonus is even better.", exampleCh: "工作很棒，獎金更棒。", favorite: false },
-{ word: "capability", pos: "n.", chinese: "能力；才幹", exampleEn: "We finally have the capability to do the job properly.", exampleCh: "我們終於有能力妥善完成這項工作。", favorite: false },
-{ word: "capable", pos: "adj.", chinese: "有能力的", exampleEn: "She is capable of judging works of art.", exampleCh: "她有能力鑑賞藝術品。", favorite: false },
-{ word: "caution", pos: "n.", chinese: "謹慎；小心", exampleEn: "Just a word of caution - cheaper models aren't worth it.", exampleCh: "提醒一下：廉價型號不值得買。", favorite: false },
-{ word: "circumstance", pos: "n.", chinese: "情況；境遇", exampleEn: "She coped very well under the circumstances.", exampleCh: "她在這種情況下應付得很好。", favorite: false },
-{ word: "collaborate", pos: "v.", chinese: "合作；協作", exampleEn: "A German company collaborated with a Swiss firm.", exampleCh: "一家德國公司與一家瑞士公司合作。", favorite: false },
-{ word: "collaboration", pos: "n.", chinese: "合作；協作", exampleEn: "The airport is a collaboration between two architects.", exampleCh: "這座機場是兩位建築師的合作成果。", favorite: false },
-{ word: "combination", pos: "n.", chinese: "混合；結合", exampleEn: "This drug can be used in combination with others.", exampleCh: "這種藥物可以與其他藥物合用。", favorite: false },
-{ word: "combine", pos: "v.", chinese: "結合；聯合", exampleEn: "Some films combine education with recreation.", exampleCh: "有些電影將教育與娛樂結合。", favorite: false },
-{ word: "committee", pos: "n.", chinese: "委員會", exampleEn: "The finance committee controls the school's budget.", exampleCh: "財務委員會控制學校預算。", favorite: false },
-{ word: "compete", pos: "v.", chinese: "競爭", exampleEn: "It's difficult for a small store to compete.", exampleCh: "小店很難參與競爭。", favorite: false },
-{ word: "competition", pos: "n.", chinese: "比賽；競爭", exampleEn: "Competition for jobs is intense.", exampleCh: "求職競爭非常激烈。", favorite: false },
-{ word: "competitive", pos: "adj.", chinese: "競爭的", exampleEn: "Acting is very competitive.", exampleCh: "演藝圈的競爭非常激烈。", favorite: false },
-{ word: "competitor", pos: "n.", chinese: "競爭者", exampleEn: "Their prices are better than their competitors.", exampleCh: "他們的價格比競爭對手更好。", favorite: false },
-{ word: "component", pos: "n.", chinese: "零件；成分", exampleEn: "Inflation control is a key component of policy.", exampleCh: "控制通膨是政策的核心組成部分。", favorite: false },
-{ word: "comprehensive", pos: "adj.", chinese: "廣泛的；綜合的", exampleEn: "We offer comprehensive training.", exampleCh: "我們提供全面的培訓。", favorite: false },
-{ word: "comprehensively", pos: "adv.", chinese: "全面地", exampleEn: "The plan was comprehensively rejected.", exampleCh: "該計畫被全面否決了。", favorite: false },
-{ word: "compromise", pos: "n./v.", chinese: "妥協；折衷", exampleEn: "A 4% pay rise was agreed in a compromise.", exampleCh: "經妥協後達成加薪 4% 的協議。", favorite: false },
-{ word: "concede", pos: "v.", chinese: "承認；讓步", exampleEn: "The government conceded the policy was a disaster.", exampleCh: "政府承認該政策是一場災難。", favorite: false },
-{ word: "concession", pos: "n.", chinese: "認可；讓步", exampleEn: "Both sides made concessions in the talks.", exampleCh: "雙方在談判中都做了讓步。", favorite: false },
-{ word: "consolidate", pos: "v.", chinese: "鞏固；合併", exampleEn: "The success consolidated the firm's position.", exampleCh: "這次成功鞏固了公司的地位。", favorite: false },
-{ word: "consolidation", pos: "n.", chinese: "鞏固；加強", exampleEn: "The company is entering a period of consolidation.", exampleCh: "公司正進入鞏固期。", favorite: false },
-{ word: "constructive", pos: "adj.", chinese: "建設性的", exampleEn: "He put forward a constructive suggestion.", exampleCh: "他提出了一個建設性的建議。", favorite: false },
-{ word: "contribute", pos: "v.", chinese: "貢獻；捐獻", exampleEn: "Her family contributed £50,000 to the fund.", exampleCh: "她家人向基金捐款五萬英鎊。", favorite: false },
-{ word: "contribution", pos: "n.", chinese: "貢獻；捐助", exampleEn: "He doesn't make much contribution to the company.", exampleCh: "他對公司沒什麼貢獻。", favorite: false },
-{ word: "contributor", pos: "n.", chinese: "捐獻者；貢獻者", exampleEn: "Older people are contributors to the economy.", exampleCh: "老人是經濟的重要貢獻者。", favorite: false },
-{ word: "cooperate", pos: "v.", chinese: "合作；配合", exampleEn: "The two companies cooperated in joint ventures.", exampleCh: "兩家公司在合資企業中合作。", favorite: false },
-{ word: "cooperation", pos: "n.", chinese: "合作；協助", exampleEn: "The company produces computers in cooperation with others.", exampleCh: "該公司與其他公司合作生產電腦。", favorite: false }
-];
+// ====== 1. 所有單元的預設資料 ======
+// 目前先把你原本這一組當成 Unit 1，其它單元先留空陣列
+const unitDefaults = {
+  1: [
+    { word: "ability", pos: "n.", chinese: "能力；才能", exampleEn: "She's a woman of considerable abilities.", exampleCh: "她是個才華橫溢的女性。", favorite: false },
+    { word: "acquisition", pos: "n.", chinese: "收購；獲得", exampleEn: "The acquisition of a small publishing firm.", exampleCh: "收購了一家小型出版商。", favorite: false },
+    { word: "affiliated", pos: "adj.", chinese: "附屬的；隸屬的", exampleEn: "The school is affiliated with a national association.", exampleCh: "該校隸屬於一個全國協會。", favorite: false },
+    { word: "allocate", pos: "v.", chinese: "分派；分配", exampleEn: "Allocating £10 million for health education.", exampleCh: "撥款一千萬英鎊用於健康教育。", favorite: false },
+    { word: "allocation", pos: "n.", chinese: "分配；額度", exampleEn: "The allocation of resources/funds/time.", exampleCh: "資源、資金或時間的分配。", favorite: false },
+    { word: "allowance", pos: "n.", chinese: "津貼；限額", exampleEn: "The perks include a travel allowance.", exampleCh: "額外待遇包括差旅津貼。", favorite: false },
+    { word: "alternate", pos: "v./adj.", chinese: "輪流；交替的", exampleEn: "He alternated working in the office with tours overseas.", exampleCh: "他輪流在辦公室工作和海外視察。", favorite: false },
+    { word: "alternative", pos: "n./adj.", chinese: "代用方案；替代的", exampleEn: "I have no alternative but to ask you to leave.", exampleCh: "我別無選擇，只能請你離開。", favorite: false },
+    { word: "alumni", pos: "n.", chinese: "校友 (複數)", exampleEn: "Several famous alumni agreed to help raise money.", exampleCh: "幾位知名校友同意協助籌款。", favorite: false },
+    { word: "arrange", pos: "v.", chinese: "安排；準備", exampleEn: "The meeting has been arranged for Wednesday.", exampleCh: "會議已安排在週三舉行。", favorite: false },
+    { word: "arrangement", pos: "n.", chinese: "安排；籌劃", exampleEn: "They'd made all the arrangements for the party.", exampleCh: "他們已為派對做好了一切準備。", favorite: false },
+    { word: "aspect", pos: "n.", chinese: "方面；層面", exampleEn: "Which aspects of the job do you most enjoy?", exampleCh: "你最喜歡這份工作的哪些方面？", favorite: false },
+    { word: "assist", pos: "v.", chinese: "幫助；協助", exampleEn: "You will be expected to assist the editor.", exampleCh: "你將被要求協助編輯。", favorite: false },
+    { word: "assistance", pos: "n.", chinese: "幫助；援助", exampleEn: "The company needs more financial assistance.", exampleCh: "公司需要更多財務援助。", favorite: false },
+    { word: "association", pos: "n.", chinese: "協會；社團", exampleEn: "The British Medical Association is campaigning for a ban.", exampleCh: "英國醫學會正在發起禁用運動。", favorite: false },
+    { word: "attribute", pos: "n./v.", chinese: "特性；歸因於", exampleEn: "The doctors attributed the illness to a virus.", exampleCh: "醫生將病因歸結為病毒。", favorite: false },
+    { word: "authority", pos: "n.", chinese: "權力；權威", exampleEn: "We need to get the support of someone in authority.", exampleCh: "我們需要得到權威人士的支持。", favorite: false },
+    { word: "authorize", pos: "v.", chinese: "批准；授權", exampleEn: "Who authorized this expenditure?", exampleCh: "誰批准了這筆開支？", favorite: false },
+    { word: "belongings", pos: "n.", chinese: "財產；行李", exampleEn: "I put a few personal belongings in a bag.", exampleCh: "我把一些個人物品裝進袋子。", favorite: false },
+    { word: "beneficial", pos: "adj.", chinese: "有利的", exampleEn: "The improvement had a beneficial effect.", exampleCh: "這項改進產生了有利的影響。", favorite: false },
+    { word: "benefit", pos: "n./v.", chinese: "利益；好處", exampleEn: "One of the benefits of travel is learning to cope.", exampleCh: "旅遊的好處之一是學會應變。", favorite: false },
+    { word: "board", pos: "n.", chinese: "董事會；委員會", exampleEn: "She's now on the board as a member.", exampleCh: "她現在是董事會的成員。", favorite: false },
+    { word: "bonus", pos: "n.", chinese: "獎金；額外好處", exampleEn: "The job is great, and the bonus is even better.", exampleCh: "工作很棒，獎金更棒。", favorite: false },
+    { word: "capability", pos: "n.", chinese: "能力；才幹", exampleEn: "We finally have the capability to do the job properly.", exampleCh: "我們終於有能力妥善完成這項工作。", favorite: false },
+    { word: "capable", pos: "adj.", chinese: "有能力的", exampleEn: "She is capable of judging works of art.", exampleCh: "她有能力鑑賞藝術品。", favorite: false },
+    { word: "caution", pos: "n.", chinese: "謹慎；小心", exampleEn: "Just a word of caution - cheaper models aren't worth it.", exampleCh: "提醒一下：廉價型號不值得買。", favorite: false },
+    { word: "circumstance", pos: "n.", chinese: "情況；境遇", exampleEn: "She coped very well under the circumstances.", exampleCh: "她在這種情況下應付得很好。", favorite: false },
+    { word: "collaborate", pos: "v.", chinese: "合作；協作", exampleEn: "A German company collaborated with a Swiss firm.", exampleCh: "一家德國公司與一家瑞士公司合作。", favorite: false },
+    { word: "collaboration", pos: "n.", chinese: "合作；協作", exampleEn: "The airport is a collaboration between two architects.", exampleCh: "這座機場是兩位建築師的合作成果。", favorite: false },
+    { word: "combination", pos: "n.", chinese: "混合；結合", exampleEn: "This drug can be used in combination with others.", exampleCh: "這種藥物可以與其他藥物合用。", favorite: false },
+    { word: "combine", pos: "v.", chinese: "結合；聯合", exampleEn: "Some films combine education with recreation.", exampleCh: "有些電影將教育與娛樂結合。", favorite: false },
+    { word: "committee", pos: "n.", chinese: "委員會", exampleEn: "The finance committee controls the school's budget.", exampleCh: "財務委員會控制學校預算。", favorite: false },
+    { word: "compete", pos: "v.", chinese: "競爭", exampleEn: "It's difficult for a small store to compete.", exampleCh: "小店很難參與競爭。", favorite: false },
+    { word: "competition", pos: "n.", chinese: "比賽；競爭", exampleEn: "Competition for jobs is intense.", exampleCh: "求職競爭非常激烈。", favorite: false },
+    { word: "competitive", pos: "adj.", chinese: "競爭的", exampleEn: "Acting is very competitive.", exampleCh: "演藝圈的競爭非常激烈。", favorite: false },
+    { word: "competitor", pos: "n.", chinese: "競爭者", exampleEn: "Their prices are better than their competitors.", exampleCh: "他們的價格比競爭對手更好。", favorite: false },
+    { word: "component", pos: "n.", chinese: "零件；成分", exampleEn: "Inflation control is a key component of policy.", exampleCh: "控制通膨是政策的核心組成部分。", favorite: false },
+    { word: "comprehensive", pos: "adj.", chinese: "廣泛的；綜合的", exampleEn: "We offer comprehensive training.", exampleCh: "我們提供全面的培訓。", favorite: false },
+    { word: "comprehensively", pos: "adv.", chinese: "全面地", exampleEn: "The plan was comprehensively rejected.", exampleCh: "該計畫被全面否決了。", favorite: false },
+    { word: "compromise", pos: "n./v.", chinese: "妥協；折衷", exampleEn: "A 4% pay rise was agreed in a compromise.", exampleCh: "經妥協後達成加薪 4% 的協議。", favorite: false },
+    { word: "concede", pos: "v.", chinese: "承認；讓步", exampleEn: "The government conceded the policy was a disaster.", exampleCh: "政府承認該政策是一場災難。", favorite: false },
+    { word: "concession", pos: "n.", chinese: "認可；讓步", exampleEn: "Both sides made concessions in the talks.", exampleCh: "雙方在談判中都做了讓步。", favorite: false },
+    { word: "consolidate", pos: "v.", chinese: "鞏固；合併", exampleEn: "The success consolidated the firm's position.", exampleCh: "這次成功鞏固了公司的地位。", favorite: false },
+    { word: "consolidation", pos: "n.", chinese: "鞏固；加強", exampleEn: "The company is entering a period of consolidation.", exampleCh: "公司正進入鞏固期。", favorite: false },
+    { word: "constructive", pos: "adj.", chinese: "建設性的", exampleEn: "He put forward a constructive suggestion.", exampleCh: "他提出了一個建設性的建議。", favorite: false },
+    { word: "contribute", pos: "v.", chinese: "貢獻；捐獻", exampleEn: "Her family contributed £50,000 to the fund.", exampleCh: "她家人向基金捐款五萬英鎊。", favorite: false },
+    { word: "contribution", pos: "n.", chinese: "貢獻；捐助", exampleEn: "He doesn't make much contribution to the company.", exampleCh: "他對公司沒什麼貢獻。", favorite: false },
+    { word: "contributor", pos: "n.", chinese: "捐獻者；貢獻者", exampleEn: "Older people are contributors to the economy.", exampleCh: "老人是經濟的重要貢獻者。", favorite: false },
+    { word: "cooperate", pos: "v.", chinese: "合作；配合", exampleEn: "The two companies cooperated in joint ventures.", exampleCh: "兩家公司在合資企業中合作。", favorite: false },
+    { word: "cooperation", pos: "n.", chinese: "合作；協助", exampleEn: "The company produces computers in cooperation with others.", exampleCh: "該公司與其他公司合作生產電腦。", favorite: false }
+  ],
+  2: [],
+  3: [],
+  4: [],
+  5: [],
+  6: [],
+  7: [],
+  8: [],
+  9: [],
+  10: [],
+  11: [],
+  12: [],
+  13: []
+};
 
-let vocabs = JSON.parse(localStorage.getItem('myVocabDB_v4')) || defaultData;
+// ====== 2. 目前單元 & localStorage key ======
+let currentUnit = 1;
+let vocabs = loadUnitData(currentUnit);
 let onlyShowFavorites = false;
+let hideEnglish = false;
+let hideChinese = false;
 
-function save() {
-localStorage.setItem('myVocabDB_v4', JSON.stringify(vocabs));
-render();
+function unitKey(unit) {
+  return `myVocabDB_v4_unit_${unit}`;
 }
 
+function loadUnitData(unit) {
+  const key = unitKey(unit);
+  const saved = localStorage.getItem(key);
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch (e) {
+      return [...(unitDefaults[unit] || [])];
+    }
+  }
+  return [...(unitDefaults[unit] || [])];
+}
+
+function save() {
+  const key = unitKey(currentUnit);
+  localStorage.setItem(key, JSON.stringify(vocabs));
+  render();
+}
+
+// ====== 3. 單元分頁 UI ======
+const unitTabsContainer = document.getElementById('unitTabs');
+function renderUnitTabs() {
+  let html = '';
+  for (let i = 1; i <= 13; i++) {
+    html += `<div class="unit-tab ${i === currentUnit ? 'active' : ''}" onclick="switchUnit(${i})">
+      Unit ${i}
+    </div>`;
+  }
+  unitTabsContainer.innerHTML = html;
+}
+
+function switchUnit(unit) {
+  if (unit === currentUnit) return;
+  currentUnit = unit;
+  vocabs = loadUnitData(currentUnit);
+  onlyShowFavorites = false;
+  document.getElementById('filterBtn').classList.remove('active');
+  document.getElementById('filterBtn').innerHTML = "⭐ 只看收藏";
+  renderUnitTabs();
+  render();
+}
+
+// ====== 4. 其它控制 ======
 function toggleStar(index) {
-vocabs[index].favorite = !vocabs[index].favorite;
-save();
+  vocabs[index].favorite = !vocabs[index].favorite;
+  save();
 }
 
 function toggleFilter() {
-onlyShowFavorites = !onlyShowFavorites;
-const btn = document.getElementById('filterBtn');
-btn.classList.toggle('active', onlyShowFavorites);
-btn.innerHTML = onlyShowFavorites ? "★ 收藏模式" : "⭐ 只看收藏";
-render();
+  onlyShowFavorites = !onlyShowFavorites;
+  const btn = document.getElementById('filterBtn');
+  btn.classList.toggle('active', onlyShowFavorites);
+  btn.innerHTML = onlyShowFavorites ? "★ 收藏模式" : "⭐ 只看收藏";
+  render();
 }
 
+function toggleHideEn() {
+  hideEnglish = !hideEnglish;
+  const btn = document.getElementById('hideEnBtn');
+  btn.textContent = hideEnglish ? "👀 顯示英文例句" : "🙈 隱藏英文例句";
+  render();
+}
+
+function toggleHideCh() {
+  hideChinese = !hideChinese;
+  const btn = document.getElementById('hideChBtn');
+  btn.textContent = hideChinese ? "👀 顯示中文翻譯" : "🙈 隱藏中文翻譯";
+  render();
+}
+
+// ====== 5. 渲染表格 ======
 function render() {
-const query = document.getElementById('searchInput').value.toLowerCase();
-const body = document.getElementById('vocabBody');
+  const query = document.getElementById('searchInput').value.toLowerCase();
+  const body = document.getElementById('vocabBody');
+  const filtered = vocabs.filter((v) => {
+    const matchesSearch = v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query);
+    const matchesFilter = onlyShowFavorites ? v.favorite : true;
+    return matchesSearch && matchesFilter;
+  });
 
-const filtered = vocabs.filter((v, idx) => {
-const matchesSearch = v.word.toLowerCase().includes(query) || v.chinese.includes(query);
-const matchesFilter = onlyShowFavorites ? v.favorite : true;
-return matchesSearch && matchesFilter;
-});
+  body.innerHTML = filtered.map((item, idx) => {
+    const posClass = item.pos ? `pos-${item.pos.charAt(0).toLowerCase()}` : 'pos-a';
 
-body.innerHTML = filtered.map((item) => {
-const realIndex = vocabs.findIndex(v => v.word === item.word);
-return `
+    const enText = hideEnglish
+      ? `<span class="example-en hidden-text" data-full="${item.exampleEn || ''}">點一下顯示英文</span>`
+      : `<span class="example-en" data-full="${item.exampleEn || ''}">${item.exampleEn || ''}</span>`;
+
+    const chText = hideChinese
+      ? `<span class="example-ch hidden-text" data-full="${item.exampleCh || ''}">點一下顯示中文</span>`
+      : `<span class="example-ch" data-full="${item.exampleCh || ''}">${item.exampleCh || ''}</span>`;
+
+    const safeWord = (item.word || '').replace(/'/g, "\\'");
+    const safeExampleEn = (item.exampleEn || '').replace(/'/g, "\\'");
+
+    return `
 <tr>
-<td>
-<div class="word-box">
-<span class="star-icon ${item.favorite ? 'active' : ''}" onclick="toggleStar(${realIndex})">★</span>
-<button class="audio-btn" onclick="speak('${item.word}', 0.8)">🔊</button>
-<span class="word-text">${item.word}</span>
-</div>
-</td>
-<td><span class="pos-tag pos-${item.pos.charAt(0)}">${item.pos}</span></td>
-<td>${item.chinese}</td>
-<td>
-<div style="display:flex; gap:10px; align-items:flex-start;">
-<button class="audio-btn" style="width:26px; height:26px; font-size:0.7rem;" onclick="speak('${item.exampleEn.replace(/'/g, "\\'")}', 0.9)">🔊</button>
-<div>
-<span class="example-en">${item.exampleEn}</span>
-<span class="example-ch">${item.exampleCh}</span>
-</div>
-</div>
-</td>
-<td><button style="border:none; background:none; cursor:pointer; color:#eee;" onclick="deleteWord(${realIndex})">🗑️</button></td>
-</tr>
-`;
-}).join('');
+  <td>
+    <div class="word-box">
+      <span class="star-icon ${item.favorite ? 'active' : ''}" onclick="toggleStar(${idx})">★</span>
+      <button class="audio-btn" onclick="speak('${safeWord}', 0.8)">🔊</button>
+      <span class="word-text">${item.word}</span>
+    </div>
+  </td>
+  <td><span class="pos-tag ${posClass}">${item.pos || ''}</span></td>
+  <td>${item.chinese || ''}</td>
+  <td>
+    <div style="display:flex; gap:10px; align-items:flex-start;">
+      <button class="audio-btn" style="width:26px; height:26px; font-size:0.7rem;"
+        onclick="speak('${safeExampleEn}', 0.9)">🔊</button>
+      <div class="examples-box">
+        ${enText}
+        ${chText}
+      </div>
+    </div>
+  </td>
+  <td>
+    <button style="border:none; background:none; cursor:pointer; color:#eee;" onclick="deleteWord(${idx})">🗑️</button>
+  </td>
+</tr>`;
+  }).join('');
+
+  // 點例句時切換顯示/隱藏
+  body.querySelectorAll('.example-en, .example-ch').forEach(span => {
+    span.addEventListener('click', () => {
+      const full = span.getAttribute('data-full') || '';
+      if (span.classList.contains('hidden-text')) {
+        span.classList.remove('hidden-text');
+        span.classList.add('reveal');
+        span.textContent = full;
+      } else if (span.classList.contains('reveal')) {
+        span.classList.add('hidden-text');
+        span.classList.remove('reveal');
+        span.textContent = span.classList.contains('example-en') ? '點一下顯示英文' : '點一下顯示中文';
+      }
+    });
+  });
 }
 
+// ====== 6. 其他功能 ======
 function speak(text, rate) {
-window.speechSynthesis.cancel();
-const msg = new SpeechSynthesisUtterance(text);
-msg.lang = 'en-US';
-msg.rate = rate;
-window.speechSynthesis.speak(msg);
+  if (!text) return;
+  window.speechSynthesis.cancel();
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = 'en-US';
+  msg.rate = rate;
+  window.speechSynthesis.speak(msg);
 }
 
 function manualAdd() {
-const word = prompt("單字:"); if (!word) return;
-const pos = prompt("詞性 (n./v./adj.):");
-const chinese = prompt("中文:");
-const exampleEn = prompt("英文例句:");
-const exampleCh = prompt("中文翻譯:");
-vocabs.unshift({ word, pos, chinese, exampleEn, exampleCh, favorite: false });
-save();
+  const word = prompt("單字:"); if (!word) return;
+  const pos = prompt("詞性 (n./v./adj.):");
+  const chinese = prompt("中文:");
+  const exampleEn = prompt("英文例句:");
+  const exampleCh = prompt("中文翻譯:");
+  vocabs.unshift({ word, pos, chinese, exampleEn, exampleCh, favorite: false });
+  save();
 }
 
 function deleteWord(index) {
-if(confirm("刪除嗎？")) { vocabs.splice(index, 1); save(); }
+  if (confirm("刪除這個單字嗎？")) { vocabs.splice(index, 1); save(); }
 }
 
 function resetData() {
-if(confirm("還原為初始 50 個單字？")) { vocabs = [...defaultData]; save(); }
+  if (confirm(`要還原 Unit ${currentUnit} 為預設單字嗎？（你在這個單元新增、刪除、收藏的紀錄會清除）`)) {
+    vocabs = [...(unitDefaults[currentUnit] || [])];
+    save();
+  }
 }
 
+// ====== 初始化 ======
+renderUnitTabs();
 render();
 </script>
-
 </body>
 </html>
