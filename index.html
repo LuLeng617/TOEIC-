@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOEIC 練習助手 - 陸冷617</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 100%; max-width: 500px; margin-bottom: 20px; }
+        h2 { color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 5px; }
+        .info-item { margin: 10px 0; font-size: 14px; color: #555; }
+        .quiz-section { text-align: center; }
+        input { width: 80%; padding: 12px; margin: 15px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+        button { background: #1a73e8; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 16px; }
+        #feedback { margin-top: 15px; font-weight: bold; min-height: 24px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>📌 多益課程進度提醒</h2>
+        <div class="info-item">✅ <b>Easy Test：</b>聽 110+ / 閱 125+ (每週更新)</div>
+        <div class="info-item">✅ <b>單字平台：</b>5/30 前完成 8 回 (目標 75分)</div>
+        <div class="info-item">✅ <b>Rosetta Stone：</b>5/30 前完成 6 回 (密碼 1411431013)</div>
+        <div class="info-item">🕒 <b>重要日期：</b>5/25 後測 | 5/31 正式考</div>
+    </div>
+
+    <div class="card quiz-section">
+        <h2>📝 單字隨機抽測</h2>
+        <p>請翻譯此單字：</p>
+        <h1 id="target-word">載入中...</h1>
+        <input type="text" id="user-input" placeholder="請輸入英文..." autocomplete="off">
+        <br>
+        <button onclick="checkAnswer()">驗證答案</button>
+        <div id="feedback"></div>
+    </div>
+
+    <script>
+        // 這裡可以隨時增加你想背的單字
+        const wordBank = [
+            { en: "requirement", ch: "需求/條件" },
+            { en: "procedure", ch: "程序/步驟" },
+            { en: "compliance", ch: "合規/順從" },
+            { en: "candidate", ch: "候選人" },
+            { en: "submit", ch: "提交" }
+        ];
+
+        let currentIdx = 0;
+
+        function nextWord() {
+            currentIdx = Math.floor(Math.random() * wordBank.length);
+            document.getElementById('target-word').innerText = wordBank[currentIdx].ch;
+            document.getElementById('user-input').value = "";
+            document.getElementById('feedback').innerText = "";
+        }
+
+        function checkAnswer() {
+            const userAns = document.getElementById('user-input').value.trim().toLowerCase();
+            const correctAns = wordBank[currentIdx].en.toLowerCase();
+            const feedback = document.getElementById('feedback');
+
+            if (userAns === correctAns) {
+                feedback.innerText = "✅ 正確！自動跳轉下一題...";
+                feedback.style.color = "green";
+                setTimeout(nextWord, 1200);
+            } else {
+                feedback.innerText = `❌ 錯誤，正確答案是：${wordBank[currentIdx].en}`;
+                feedback.style.color = "red";
+            }
+        }
+
+        nextWord();
+    </script>
+</body>
+</html>
