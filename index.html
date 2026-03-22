@@ -5,77 +5,235 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TOEIC必考單字與片語</title>
 <style>
-:root { --primary: #2563eb; --star: #f1c40f; --bg: #f1f5f9; --text: #1e293b; }
-body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-.container { max-width: 1250px; margin: auto; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+:root {
+  --primary: #2563eb;
+  --star: #f1c40f;
+  --bg: #f1f5f9;
+  --text: #1e293b;
+}
+body {
+  font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  margin: 0;
+  padding: 12px;
+}
+.container {
+  max-width: 1250px;
+  margin: auto;
+  background: white;
+  padding: 18px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
 
 /* 頂部控制區 */
-.header { display: flex; flex-direction: column; align-items: center; margin-bottom: 15px; }
-.controls { display: flex; gap: 10px; width: 100%; margin-top: 10px; flex-wrap: wrap; }
-input#searchInput { flex-grow: 1; min-width: 180px; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; outline: none; transition: 0.3s; }
-input#searchInput:focus { border-color: var(--primary); }
-.btn { padding: 8px 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 5px; font-size: 13px; }
-.btn-filter { background-color: white; border: 2px solid #e2e8f0; color: #64748b; }
-.btn-filter.active { background-color: var(--star); color: #856404; border-color: #f1c40f; }
-.btn-add { background-color: #10b981; color: white; }
-.btn-reset { background-color: #fee2e2; color: #ef4444; font-size: 11px; }
-.btn-hide { background-color: #e0f2fe; color: #0369a1; }
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.header h1 {
+  font-size: 20px;
+  margin: 0;
+}
 
-/* 單元分頁 */
-.unit-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 6px; }
-.unit-tab {
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid #e2e8f0;
-  font-size: 12px;
-  cursor: pointer;
-  background: #f8fafc;
+/* 課程下拉式選單 */
+.unit-select-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
   color: #64748b;
 }
-.unit-tab.active {
-  background: var(--primary);
-  color: #ffffff;
+.unit-select-row select {
+  padding: 6px 8px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  font-size: 13px;
+  color: #334155;
+}
+
+/* 控制列 */
+.controls {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+input#searchInput {
+  flex-grow: 1;
+  min-width: 160px;
+  padding: 8px 10px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  outline: none;
+  transition: 0.3s;
+  font-size: 13px;
+}
+input#searchInput:focus {
   border-color: var(--primary);
+}
+.btn {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.btn-filter {
+  background-color: white;
+  border: 2px solid #e2e8f0;
+  color: #64748b;
+}
+.btn-filter.active {
+  background-color: var(--star);
+  color: #856404;
+  border-color: #f1c40f;
+}
+.btn-add {
+  background-color: #10b981;
+  color: white;
+}
+.btn-reset {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+.btn-hide {
+  background-color: #e0f2fe;
+  color: #0369a1;
+}
+.btn-quiz {
+  background-color: #f97316;
+  color: white;
 }
 
 /* 範圍控制區 */
 .range-controls {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  gap: 4px;
+  font-size: 11px;
   color: #64748b;
 }
 .range-controls input {
-  width: 60px;
-  padding: 4px 6px;
+  width: 52px;
+  padding: 3px 5px;
   border-radius: 6px;
   border: 1px solid #e2e8f0;
+  font-size: 11px;
 }
 
-/* 表格樣式 */
-table { width: 100%; border-collapse: collapse; }
-th { background-color: #f8fafc; padding: 15px; text-align: left; border-bottom: 2px solid #e2e8f0; color: #64748b; }
-td { padding: 15px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
-tr:hover { background-color: #fdfdfd; }
+/* 表格樣式：縮小高度 */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th {
+  background-color: #f8fafc;
+  padding: 8px 6px;
+  text-align: left;
+  border-bottom: 2px solid #e2e8f0;
+  color: #64748b;
+}
+td {
+  padding: 6px 6px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: top;
+}
+tr:hover {
+  background-color: #fdfdfd;
+}
 
-/* 單字與收藏 */
-.word-box { display: flex; align-items: center; gap: 10px; }
-.star-icon { cursor: pointer; font-size: 1.4rem; color: #cbd5e1; transition: 0.2s; user-select: none; }
-.star-icon.active { color: var(--star); }
-.word-text { font-weight: 800; color: #2563eb; font-size: 1.2rem; }
-.pos-tag { padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; color: white; background: #94a3b8; font-weight: bold; }
+/* 單字與收藏：縮小間距 */
+.word-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.star-icon {
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: #cbd5e1;
+  transition: 0.2s;
+  user-select: none;
+}
+.star-icon.active {
+  color: var(--star);
+}
+.word-text {
+  font-weight: 800;
+  color: #2563eb;
+  font-size: 1.05rem;
+}
+
+/* 詞性 + 中文定義同一塊，減少高度 */
+.word-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.pos-tag {
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  color: white;
+  background: #94a3b8;
+  font-weight: bold;
+}
 .pos-n { background: #f59e0b; }
 .pos-v { background: #3b82f6; }
 .pos-a { background: #10b981; }
 
-/* 發音按鈕 */
-.audio-btn { background: #f1f5f9; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; color: #2563eb; }
-.audio-btn:hover { background: #2563eb; color: white; }
+/* 發音按鈕縮小 */
+.audio-btn {
+  background: #f1f5f9;
+  border: none;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  color: #2563eb;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.audio-btn:hover {
+  background: #2563eb;
+  color: white;
+}
 
-/* 例句區 */
-.example-en { font-style: italic; color: #475569; margin-bottom: 4px; display: block; cursor: pointer; }
-.example-ch { color: #94a3b8; font-size: 0.9rem; display: block; cursor: pointer; }
+/* 例句區：更緊湊 */
+.examples-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.example-en {
+  font-style: italic;
+  color: #475569;
+  display: block;
+  cursor: pointer;
+}
+.example-ch {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  display: block;
+  cursor: pointer;
+}
 
 /* 遮住文字 */
 .hidden-text {
@@ -88,12 +246,43 @@ tr:hover { background-color: #fdfdfd; }
   color: inherit;
 }
 
-/* 手機 */
+/* 手機：每個單字變成卡片，但高度壓縮 */
 @media (max-width: 900px) {
-  .controls { flex-wrap: wrap; }
-  th:nth-child(2), th:nth-child(3) { display: none; }
-  td { display: block; border: none; }
-  tr { display: block; border-bottom: 4px solid #f1f5f9; padding: 10px 0; }
+  .container {
+    padding: 12px;
+  }
+  th:nth-child(2),
+  th:nth-child(3) {
+    display: none;
+  }
+  table, thead {
+    display: block;
+  }
+  tr {
+    display: block;
+    border-bottom: 4px solid #f1f5f9;
+    padding: 6px 0;
+  }
+  td {
+    display: block;
+    border: none;
+    padding: 2px 0;
+  }
+  td:nth-child(1) {
+    font-size: 12px;
+    color: #94a3b8;
+  }
+}
+
+/* 抽考模式提示 */
+.quiz-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #ffedd5;
+  color: #c05621;
+  font-size: 10px;
+  margin-left: 4px;
 }
 </style>
 </head>
@@ -102,17 +291,26 @@ tr:hover { background-color: #fdfdfd; }
   <div class="header">
     <h1>TOEIC必考單字與片語</h1>
 
-    <!-- 單元分頁 -->
-    <div id="unitTabs" class="unit-tabs"></div>
+    <!-- 課程下拉式選單 -->
+    <div class="unit-select-row">
+      <span>課程：</span>
+      <select id="unitSelect" onchange="switchUnitSelect()">
+        <!-- 用 JS 填入 Unit 1~13 -->
+      </select>
+      <span id="quizInfo" style="font-size:11px; color:#f97316; display:none;">
+        抽考中
+      </span>
+    </div>
 
     <div class="controls">
       <input type="text" id="searchInput" placeholder="搜尋單字、中文..." onkeyup="render()">
-      <button id="filterBtn" class="btn btn-filter" onclick="toggleFilter()">⭐ 只看收藏</button>
+      <button id="filterBtn" class="btn btn-filter" onclick="toggleFilter()">⭐ 收藏</button>
       <button class="btn btn-add" onclick="manualAdd()">＋ 新增</button>
-      <button class="btn btn-reset" onclick="resetData()">還原目前單元</button>
-      <button id="hideWordBtn" class="btn btn-hide" onclick="toggleHideWord()">🙈 隱藏單字</button>
-      <button id="hideDefBtn" class="btn btn-hide" onclick="toggleHideDef()">🙈 隱藏中文定義</button>
-      <button id="hideChBtn" class="btn btn-hide" onclick="toggleHideCh()">🙈 隱藏中文例句</button>
+      <button class="btn btn-reset" onclick="resetData()">還原單元</button>
+      <button id="hideWordBtn" class="btn btn-hide" onclick="toggleHideWord()">🙈 單字</button>
+      <button id="hideDefBtn" class="btn btn-hide" onclick="toggleHideDef()">🙈 中文</button>
+      <button id="hideChBtn" class="btn btn-hide" onclick="toggleHideCh()">🙈 中例句</button>
+      <button class="btn btn-quiz" onclick="startQuiz()">🎲 抽考</button>
       <div class="range-controls">
         <span>顯示第</span>
         <input type="number" id="rangeStart" min="1" value="1" onchange="render()">
@@ -215,10 +413,13 @@ let hideWord = false;
 let hideDef = false;
 let hideChinese = false;
 
+// 抽考模式
+let quizMode = false;
+let quizList = []; // 抽出來要考的那幾題（存的是 vocabs 的 index）
+
 function unitKey(unit) {
   return `myVocabDB_v4_unit_${unit}`;
 }
-
 function loadUnitData(unit) {
   const key = unitKey(unit);
   const saved = localStorage.getItem(key);
@@ -231,91 +432,127 @@ function loadUnitData(unit) {
   }
   return [...(unitDefaults[unit] || [])];
 }
-
 function save() {
   const key = unitKey(currentUnit);
   localStorage.setItem(key, JSON.stringify(vocabs));
   render();
 }
 
-// ====== 3. 單元分頁 UI ======
-const unitTabsContainer = document.getElementById('unitTabs');
-function renderUnitTabs() {
+// ====== 3. 課程下拉式選單 UI ======
+const unitSelect = document.getElementById('unitSelect');
+function initUnitSelect() {
   let html = '';
   for (let i = 1; i <= 13; i++) {
-    html += `<div class="unit-tab ${i === currentUnit ? 'active' : ''}" onclick="switchUnit(${i})">
-      Unit ${i}
-    </div>`;
+    html += `<option value="${i}">Unit ${i}</option>`;
   }
-  unitTabsContainer.innerHTML = html;
+  unitSelect.innerHTML = html;
+  unitSelect.value = String(currentUnit);
 }
-
-function switchUnit(unit) {
+function switchUnitSelect() {
+  const unit = parseInt(unitSelect.value, 10);
   if (unit === currentUnit) return;
   currentUnit = unit;
   vocabs = loadUnitData(currentUnit);
   onlyShowFavorites = false;
   document.getElementById('filterBtn').classList.remove('active');
-  document.getElementById('filterBtn').innerHTML = "⭐ 只看收藏";
+  document.getElementById('filterBtn').textContent = "⭐ 收藏";
   document.getElementById('rangeStart').value = 1;
   document.getElementById('rangeEnd').value = 999;
-  renderUnitTabs();
+  // 離開抽考模式
+  quizMode = false;
+  quizList = [];
+  document.getElementById('quizInfo').style.display = 'none';
   render();
 }
 
 // ====== 4. 控制按鈕 ======
-function toggleStar(index) {
-  vocabs[index].favorite = !vocabs[index].favorite;
-  save();
-}
-
 function toggleFilter() {
   onlyShowFavorites = !onlyShowFavorites;
   const btn = document.getElementById('filterBtn');
-  btn.classList.toggle('active', onlyShowFavorites);
-  btn.innerHTML = onlyShowFavorites ? "★ 收藏模式" : "⭐ 只看收藏";
+  if (onlyShowFavorites) {
+    btn.classList.add('active');
+    btn.textContent = "★ 收藏中";
+  } else {
+    btn.classList.remove('active');
+    btn.textContent = "⭐ 收藏";
+  }
   render();
 }
-
 function toggleHideWord() {
   hideWord = !hideWord;
   const btn = document.getElementById('hideWordBtn');
-  btn.textContent = hideWord ? "👀 顯示單字" : "🙈 隱藏單字";
+  btn.textContent = hideWord ? "👀 單字" : "🙈 單字";
   render();
 }
-
 function toggleHideDef() {
   hideDef = !hideDef;
   const btn = document.getElementById('hideDefBtn');
-  btn.textContent = hideDef ? "👀 顯示中文定義" : "🙈 隱藏中文定義";
+  btn.textContent = hideDef ? "👀 中文" : "🙈 中文";
   render();
 }
-
 function toggleHideCh() {
   hideChinese = !hideChinese;
   const btn = document.getElementById('hideChBtn');
-  btn.textContent = hideChinese ? "👀 顯示中文例句" : "🙈 隱藏中文例句";
+  btn.textContent = hideChinese ? "👀 中例句" : "🙈 中例句";
   render();
 }
 
-// ====== 5. 渲染表格（含編號＋範圍） ======
+// ====== 5. 抽考模式 ======
+function startQuiz() {
+  const total = vocabs.length;
+  if (!total) {
+    alert("這個單元還沒有單字。");
+    return;
+  }
+  let n = prompt(`要抽幾題？（1～${total}）`, "10");
+  if (!n) return;
+  n = parseInt(n, 10);
+  if (isNaN(n) || n <= 0) return;
+  if (n > total) n = total;
+
+  // 抽 n 個不重複 index
+  const allIndex = [...Array(total).keys()]; // 0..total-1
+  for (let i = allIndex.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [allIndex[i], allIndex[j]] = [allIndex[j], allIndex[i]];
+  }
+  quizList = allIndex.slice(0, n);
+  quizMode = true;
+  document.getElementById('quizInfo').style.display = 'inline';
+  // 自動把範圍調整成全部顯示
+  document.getElementById('rangeStart').value = 1;
+  document.getElementById('rangeEnd').value = 999;
+  render();
+}
+
+// ====== 6. 渲染表格（含編號＋範圍＋抽考） ======
 function render() {
   const query = document.getElementById('searchInput').value.toLowerCase();
   const body = document.getElementById('vocabBody');
   const rangeStart = parseInt(document.getElementById('rangeStart').value || '1', 10);
   const rangeEnd = parseInt(document.getElementById('rangeEnd').value || '999', 10);
 
-  const filtered = vocabs.filter((v) => {
-    const matchesSearch = v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query);
-    const matchesFilter = onlyShowFavorites ? v.favorite : true;
-    return matchesSearch && matchesFilter;
-  });
+  // 基本搜尋＋收藏過濾
+  let filtered = vocabs
+    .map((v, i) => ({ ...v, _index: i }))
+    .filter((v) => {
+      const matchesSearch =
+        v.word.toLowerCase().includes(query) ||
+        (v.chinese || "").includes(query);
+      const matchesFilter = onlyShowFavorites ? v.favorite : true;
+      return matchesSearch && matchesFilter;
+    });
+
+  // 若在抽考模式：只保留 quizList 內的 index
+  if (quizMode && quizList.length) {
+    const set = new Set(quizList);
+    filtered = filtered.filter(v => set.has(v._index));
+  }
 
   const total = filtered.length;
   const startIndex = Math.max(1, rangeStart);
   const endIndex = Math.min(rangeEnd, total);
-
-  const sliced = filtered.slice(startIndex - 1, endIndex); // [web:92][web:93]
+  const sliced = filtered.slice(startIndex - 1, endIndex);
 
   body.innerHTML = sliced.map((item, idx) => {
     const globalIndex = startIndex + idx;
@@ -323,51 +560,56 @@ function render() {
 
     // 單字
     const wordContent = hideWord
-      ? `<span class="word-text hidden-text" data-full="${item.word}">點一下顯示單字</span>`
+      ? `<span class="word-text hidden-text" data-full="${item.word}">點一下顯示</span>`
       : `<span class="word-text" data-full="${item.word}">${item.word}</span>`;
 
-    // 中文定義
+    // 詞性＋中文同一格
     const defContent = hideDef
-      ? `<span class="hidden-text" data-full="${item.chinese || ''}">點一下顯示中文</span>`
+      ? `<span class="hidden-text" data-full="${item.chinese || ''}">點一下顯示</span>`
       : `<span data-full="${item.chinese || ''}">${item.chinese || ''}</span>`;
 
-    // 中文例句
     const chText = hideChinese
-      ? `<span class="example-ch hidden-text" data-full="${item.exampleCh || ''}">點一下顯示中文例句</span>`
+      ? `<span class="example-ch hidden-text" data-full="${item.exampleCh || ''}">點一下顯示中例句</span>`
       : `<span class="example-ch" data-full="${item.exampleCh || ''}">${item.exampleCh || ''}</span>`;
 
-    // 英文例句永遠顯示
     const enText = `<span class="example-en" data-full="${item.exampleEn || ''}">${item.exampleEn || ''}</span>`;
 
     const safeWord = (item.word || '').replace(/'/g, "\\'");
     const safeExampleEn = (item.exampleEn || '').replace(/'/g, "\\'");
 
+    // 若在抽考模式，可以在編號旁邊加一個小標示
+    const quizBadge = quizMode ? `<span class="quiz-badge">Quiz</span>` : "";
+
     return `
-<tr>
-  <td>${globalIndex}</td>
-  <td>
-    <div class="word-box">
-      <span class="star-icon ${item.favorite ? 'active' : ''}" onclick="toggleStarByWord('${safeWord}')">★</span>
-      <button class="audio-btn" onclick="speak('${safeWord}', 0.8)">🔊</button>
-      ${wordContent}
-    </div>
-  </td>
-  <td><span class="pos-tag ${posClass}">${item.pos || ''}</span></td>
-  <td>${defContent}</td>
-  <td>
-    <div style="display:flex; gap:10px; align-items:flex-start;">
-      <button class="audio-btn" style="width:26px; height:26px; font-size:0.7rem;"
-        onclick="speak('${safeExampleEn}', 0.9)">🔊</button>
-      <div class="examples-box">
-        ${enText}
-        ${chText}
-      </div>
-    </div>
-  </td>
-  <td>
-    <button style="border:none; background:none; cursor:pointer; color:#eee;" onclick="deleteByWord('${safeWord}')">🗑️</button>
-  </td>
-</tr>`;
+      <tr>
+        <td>${globalIndex}${quizBadge}</td>
+        <td>
+          <div class="word-box">
+            <span class="star-icon ${item.favorite ? 'active' : ''}" onclick="toggleStarByWord('${safeWord}')">★</span>
+            <button class="audio-btn" onclick="speak('${safeWord}', 0.8)">🔊</button>
+            ${wordContent}
+          </div>
+        </td>
+        <td colspan="2">
+          <div class="word-meta">
+            <span class="pos-tag ${posClass}">${item.pos || ''}</span>
+            ${defContent}
+          </div>
+        </td>
+        <td>
+          <div style="display:flex; gap:6px; align-items:flex-start;">
+            <button class="audio-btn" onclick="speak('${safeExampleEn}', 0.9)">🔊</button>
+            <div class="examples-box">
+              ${enText}
+              ${chText}
+            </div>
+          </div>
+        </td>
+        <td>
+          <button style="border:none; background:none; cursor:pointer; color:#d1d5db;" onclick="deleteByWord('${safeWord}')">🗑️</button>
+        </td>
+      </tr>
+    `;
   }).join('');
 
   // 點被隱藏的文字時切換顯示/隱藏
@@ -384,11 +626,11 @@ function render() {
         span.classList.add('hidden-text');
         span.classList.remove('reveal');
         if (span.classList.contains('example-ch')) {
-          span.textContent = '點一下顯示中文例句';
+          span.textContent = '點一下顯示中例句';
         } else if (span.closest('td') && span.closest('td').cellIndex === 1) {
-          span.textContent = '點一下顯示單字';
+          span.textContent = '點一下顯示';
         } else {
-          span.textContent = '點一下顯示中文';
+          span.textContent = '點一下顯示';
         }
       }
     });
@@ -412,7 +654,7 @@ function deleteByWord(word) {
   save();
 }
 
-// ====== 6. 其他功能 ======
+// ====== 7. 其他功能 ======
 function speak(text, rate) {
   if (!text) return;
   window.speechSynthesis.cancel();
@@ -421,7 +663,6 @@ function speak(text, rate) {
   msg.rate = rate;
   window.speechSynthesis.speak(msg);
 }
-
 function manualAdd() {
   const word = prompt("單字:"); if (!word) return;
   const pos = prompt("詞性 (n./v./adj.):");
@@ -431,16 +672,19 @@ function manualAdd() {
   vocabs.unshift({ word, pos, chinese, exampleEn, exampleCh, favorite: false });
   save();
 }
-
 function resetData() {
   if (confirm(`要還原 Unit ${currentUnit} 為預設單字嗎？（你在這個單元新增、刪除、收藏的紀錄會清除）`)) {
     vocabs = [...(unitDefaults[currentUnit] || [])];
+    // 離開抽考模式
+    quizMode = false;
+    quizList = [];
+    document.getElementById('quizInfo').style.display = 'none';
     save();
   }
 }
 
 // ====== 初始化 ======
-renderUnitTabs();
+initUnitSelect();
 render();
 </script>
 </body>
