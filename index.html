@@ -565,29 +565,48 @@ let hideDef = false;
 let hideChinese = false;
 
 // 抽考模式
-let quizMode = false;
-let quizList = [];
+function startQuiz() {
+  const total = vocabs.length;
+  if (!total) { alert("這個單元還沒有單字。"); return; }
 
-function unitKey(unit) {
-  return `myVocabDB_v4_unit_${unit}`;
-}
-function loadUnitData(unit) {
-  const key = unitKey(unit);
-  const saved = localStorage.getItem(key);
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch (e) {
-      return [...(unitDefaults[unit] || [])];
-    }
+  let from = prompt(`要從第幾筆開始抽？(1～${total})`, "1");
+  if (from === null) return;
+  from = parseInt(from, 10);
+  if (isNaN(from) || from < 1) from = 1;
+  if (from > total) from = total;
+
+  let to = prompt(`要抽到第幾筆？(${from}～${total})`, String(total));
+  if (to === null) return;
+  to = parseInt(to, 10);
+  if (isNaN(to) || to < from) to = total;
+  if (to > total) to = total;
+
+  const rangeCount = to - from + 1;
+
+  let n = prompt(`在第 ${from} 到第 ${to} 筆中要抽幾題？（1～${rangeCount}）`, "10");
+  if (!n) return;
+  n = parseInt(n, 10);
+  if (isNaN(n) || n <= 0) return;
+  if (n > rangeCount) n = rangeCount;
+
+  const allIndex = [];
+  for (let i = from - 1; i <= to - 1; i++) {
+    allIndex.push(i);
   }
-  return [...(unitDefaults[unit] || [])];
-}
-function save() {
-  const key = unitKey(currentUnit);
-  localStorage.setItem(key, JSON.stringify(vocabs));
+  for (let i = allIndex.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [allIndex[i], allIndex[j]] = [allIndex[j], allIndex[i]];
+  }
+  quizList = allIndex.slice(0, n);
+
+  quizMode = true;
+  document.getElementById('quizInfo').style.display = 'inline';
+  // 範圍顯示剛剛選的 from / to（也可以清空，看你喜歡）
+  document.getElementById('rangeStart').value = from;
+  document.getElementById('rangeEnd').value = to;
   render();
 }
+
 
 // ====== 3. 課程下拉式選單 UI ======
 const unitSelect = document.getElementById('unitSelect');
@@ -636,15 +655,17 @@ function toggleHideWord() {
   render();
 }
 function toggleHideDef() {
-  hideDef = !hideDef;
-  const btn = document.getElementById('hideDefBtn');
-  btn.textContent = hideDef ? "👀 中文" : "🙈 中文";
-  render();
-}
-function toggleHideCh() {
-  hideChinese = !hideChinese;
-  const btn = document.getElementById('hideChBtn');
-  btn.textContent = hideChinese ? "👀 中例句" : "🙈 中例句";
+  // 兩個都一起控制
+  const newState = !hideDef;
+  hideDef = newState;
+  hideChinese = newState;
+
+  const btnDef = document.getElementById('hideDefBtn');
+  const btnCh = document.getElementById('hideChBtn');
+
+  btnDef.textContent = newState ? "👀 中文" : "🙈 中文";
+  btnCh.textContent = newState ? "👀 中例句" : "🙈 中例句";
+
   render();
 }
 
@@ -818,5 +839,23 @@ function resetData() {
 initUnitSelect();
 render();
 </script>
+<button id="backToTopBtn" 
+        style="position:fixed; right:16px; bottom:16px; padding:8px 10px;
+               border:none; border-radius:999px; background:#2563eb; color:white;
+               font-size:12px; cursor:pointer; display:none; z-index:999;">
+  ↑ Top
+</button>
+
+<script>
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('backToTopBtn');
+  if (window.scrollY > 200) btn.style.display = 'block';
+  else btn.style.display = 'none';
+});
+document.getElementById('backToTopBtn').onclick = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+</script>
+
 </body>
 </html>
