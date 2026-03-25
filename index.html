@@ -1257,6 +1257,20 @@ function initUnitSelect() {
   vocabs = loadUnitData(currentUnit);
 }
 
+// ✅ 顯示範圍（第 ? 到 ? 筆）
+let rangeStart = null;
+let rangeEnd = null;
+
+function onRangeChange() {
+  const s = document.getElementById('rangeStart').value;
+  const e = document.getElementById('rangeEnd').value;
+
+  rangeStart = s ? parseInt(s, 10) : null;
+  rangeEnd   = e ? parseInt(e, 10) : null;
+
+  render();
+}
+
 // 切換單元
 function switchUnitSelect() {
   currentUnit = parseInt(document.getElementById('unitSelect').value, 10);
@@ -1268,6 +1282,7 @@ function switchUnitSelect() {
   document.getElementById('rangeEnd').value = "";
   render();
 }
+
 
 // 抽考：自訂範圍
 function startQuiz() {
