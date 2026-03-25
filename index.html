@@ -1339,6 +1339,7 @@ function render() {
         const posKey = item.pos.replace('.', '').replace('/', '').toLowerCase();
         
         // 根據開關狀態決定是否隱藏
+		const wordCellClass = hideWord ? 'hidden-text' : 'word-text';
         const defHiddenClass = hideDef ? 'hidden-text' : '';
         const chHiddenClass = hideDef ? 'hidden-text' : 'example-ch';
 
