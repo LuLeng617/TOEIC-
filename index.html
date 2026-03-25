@@ -1268,18 +1268,37 @@ function switchUnitSelect() {
 
 // 抽考功能
 function startQuiz() {
-    const total = vocabs.length;
-    if (!total) return;
-    let qStart = parseInt(prompt(`隨機範圍 - 從第幾筆開始？ (1 ~ ${total})`, "1"), 10) || 1;
-    let qEnd = parseInt(prompt(`隨機範圍 - 到第幾筆結束？ (${qStart} ~ ${total})`, total), 10) || total;
-    qStart = Math.max(1, Math.min(qStart, total));
-    qEnd = Math.max(qStart, Math.min(qEnd, total));
-    let n = parseInt(prompt(`要在第 ${qStart} 到 ${qEnd} 筆中抽幾題？`, "10"), 10) || 10;
+    // 取得目前搜尋與範圍的參數
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const startInput = document.getElementById('rangeStart').value;
+    const endInput = document.getElementById('rangeEnd').value;
     
-    const rangeIndices = [];
-    for (let i = qStart - 1; i < qEnd; i++) { rangeIndices.push(i); }
-    quizList = rangeIndices.sort(() => Math.random() - 0.5).slice(0, n);
+    const start = startInput === "" ? 1 : Math.max(1, parseInt(startInput, 10));
+    const end = endInput === "" ? vocabs.length : Math.min(vocabs.length, parseInt(endInput, 10));
+
+    // 找出目前「過濾後且在範圍內」的原始索引
+    let currentVisibleIndices = vocabs
+        .map((v, i) => ({ ...v, _index: i }))
+        .filter(v =>
+            (v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query)) &&
+            (onlyShowFavorites ? v.favorite : true)
+        )
+        .slice(start - 1, end)
+        .map(v => v._index);
+
+    if (currentVisibleIndices.length === 0) {
+        alert("目前畫面沒有單字可以隨機！");
+        return;
+    }
+
+    // 直接打亂這些索引
+    quizList = currentVisibleIndices.sort(() => Math.random() - 0.5);
     quizMode = true;
+    
+    // 自動開啟「隱藏單字」與「隱藏中文」功能（抽考模式通常需要遮住答案）
+    hideWord = true;
+    hideDef = true;
+
     document.getElementById('quizInfo').style.display = 'inline';
     render();
 }
@@ -1289,32 +1308,37 @@ function render() {
     const query = document.getElementById('searchInput').value.toLowerCase();
     const body = document.getElementById('vocabBody');
     
-    // 讀取範圍值
     const startInput = document.getElementById('rangeStart').value;
     const endInput = document.getElementById('rangeEnd').value;
-    
-    // 邏輯處理：如果沒填，預設為 1 到 最後一筆
-    const start = startInput === "" ? 1 : Math.max(1, parseInt(startInput, 10));
-    const end = endInput === "" ? vocabs.length : Math.min(vocabs.length, parseInt(endInput, 10));
 
-    // 1. 過濾搜尋與收藏
-    let filtered = vocabs
-        .map((v, i) => ({ ...v, _index: i }))
-        .filter(v =>
-            (v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query)) &&
-            (onlyShowFavorites ? v.favorite : true)
-        );
+    let displayList = [];
 
-    // 2. 如果是隨機模式
     if (quizMode) {
-        filtered = filtered.filter(v => quizList.includes(v._index));
+        // 【隨機模式】：直接依照打亂後的索引清單來顯示
+        displayList = quizList.map(originalIdx => ({
+            ...vocabs[originalIdx],
+            _index: originalIdx
+        }));
+    } else {
+        // 【一般模式】：先過濾搜尋/收藏，再根據範圍切片
+        const start = startInput === "" ? 1 : Math.max(1, parseInt(startInput, 10));
+        const end = endInput === "" ? vocabs.length : Math.min(vocabs.length, parseInt(endInput, 10));
+
+        let filtered = vocabs
+            .map((v, i) => ({ ...v, _index: i }))
+            .filter(v =>
+                (v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query)) &&
+                (onlyShowFavorites ? v.favorite : true)
+            );
+        
+        displayList = filtered.slice(start - 1, end);
     }
 
-    // 3. 執行範圍切片 (真正的範圍功能)
-    const displayList = filtered.slice(start - 1, end);
-
+    // 渲染表格內容
     body.innerHTML = displayList.map((item, idx) => {
         const posKey = item.pos.replace('.', '').replace('/', '').toLowerCase();
+        
+        // 根據開關狀態決定是否隱藏
         const wordCellClass = hideWord ? 'hidden-text' : 'word-text';
         const defHiddenClass = hideDef ? 'hidden-text' : '';
         const chHiddenClass = hideDef ? 'hidden-text' : 'example-ch';
@@ -1339,6 +1363,7 @@ function render() {
         `;
     }).join('');
 }
+		
 // 收藏 / 刪除 / 篩選 / 隱藏
 function toggleStar(idx) {
   vocabs[idx].favorite = !vocabs[idx].favorite;
