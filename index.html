@@ -53,12 +53,12 @@
             </div>
             <div class="range-controls">
                 <span>顯示第</span>
-                <input type="number" id="rangeStart" placeholder="">
+                <input type="number" id="rangeStart" placeholder="1" oninput="render()">
                 <span>到</span>
-                <input type="number" id="rangeEnd" placeholder="">
+                <input type="number" id="rangeEnd" placeholder="末筆" oninput="render()">
                 <span>筆</span>
             </div>
-            <button class="btn btn-quiz" onclick="startRandom()">🎲 隨機</button>
+            <button class="btn btn-quiz" onclick="startQuiz()">🎲 隨機抽考</button>
         </div>
         <div class="controls">
             <input type="text" id="searchInput" placeholder="搜尋..." onkeyup="render()">
