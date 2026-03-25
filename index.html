@@ -77,11 +77,19 @@
 
 <button id="backToTopBtn" onclick="scrollToTop()">↑</button>
 
-<script>
-// 單字資料庫 (前 150 個)
 const unitDefaults = {
-    1: [],
-    2: [const wordBank = [
+  1: [],
+  2: [const wordBank = [
+    { word: "a bachelor's degree", ... },
+    ...
+  ];]
+};
+
+<script>
+// 單字資料庫 (Unit 1 空，Unit 2 = 你的 TOEIC 字彙)
+const unitDefaults = {
+  1: [],
+  2: [
     { word: "a bachelor's degree", pos: "n.", chinese: "學士學位", exampleEn: "This job requires at least a bachelor's degree in business.", exampleCh: "這份工作要求至少有商學學士學位。", favorite: false },
     { word: "a degree", pos: "n.", chinese: "(n.)部分地；在某種程度上", exampleEn: "She's got a bachelor's/master's degree in history from Yale.", exampleCh: "她獲得了耶魯大學歷史專業的學士/碩士學位。", favorite: false },
     { word: "a doctoral degree", pos: "n.", chinese: "博士學位", exampleEn: "She has a doctorate in physics from Norwich.", exampleCh: "她獲得了諾里奇大學的物理學博士學位。", favorite: false },
@@ -230,8 +238,19 @@ const unitDefaults = {
     { word: "vacancy", pos: "n.", chinese: "空位；(職位)空缺", exampleEn: "There is a vacancy for a shop assistant on Saturdays.", exampleCh: "商店有個星期六上班的店員職位空缺。", favorite: false },
     { word: "vacant", pos: "adj.", chinese: "(工作職位)空缺的", exampleEn: "When the post fell vacant, Dennis Bass was appointed to fill it.", exampleCh: "鄧尼斯·巴斯被任命填補那個職位空缺。", favorite: false },
     { word: "vice president", pos: "n.", chinese: "副總裁，副總經理", exampleEn: "She's vice president of sales and marketing.", exampleCh: "她是主管市場行銷的副總裁。", favorite: false },
-    { word: "wage", pos: "n.", chinese: "工資(通常按周計算)", exampleEn: "He gets/earns/is paid a good wage because he works for a fair employer.", exampleCh: "他的薪水很不錯，因為他的老闆獎懲公平。", favorite: false }
-];]
+    { word: "wage", pos: "n.", chinese: "工資(通常按周計算)", exampleEn: "He gets/earns/is paid a good wage because he works for a fair employer.", exampleCh: "他的薪水很不錯，因為他的老闆獎懲公平。", favorite: false },
+  ],
+  3: [],
+  4: [],
+  5: [],
+  6: [],
+  7: [],
+  8: [],
+  9: [],
+  10: [],
+  11: [],
+  12: [],
+  13: []
 };
 
 let currentUnit = 1;
@@ -242,116 +261,193 @@ let onlyShowFavorites = false;
 let hideWord = false;
 let hideDef = false;
 
+// 讀寫 localStorage
 function loadUnitData(unit) {
-    const saved = localStorage.getItem(`toeic_unit_${unit}`);
-    return saved ? JSON.parse(saved) : [...(unitDefaults[unit] || [])];
+  const saved = localStorage.getItem(`toeic_unit_${unit}`);
+  return saved ? JSON.parse(saved) : [...(unitDefaults[unit] || [])];
 }
-
 function save() {
-    localStorage.setItem(`toeic_unit_${currentUnit}`, JSON.stringify(vocabs));
-    render();
+  localStorage.setItem(`toeic_unit_${currentUnit}`, JSON.stringify(vocabs));
+  render();
 }
 
+// 初始化單元選單
 function initUnitSelect() {
-    const select = document.getElementById('unitSelect');
-    select.innerHTML = Object.keys(unitDefaults).map(i => `<option value="${i}">Unit ${i}</option>`).join('');
-    vocabs = loadUnitData(currentUnit);
+  const select = document.getElementById('unitSelect');
+  select.innerHTML = Object.keys(unitDefaults)
+    .map(i => `<option value="${i}">Unit ${i}</option>`).join('');
+  vocabs = loadUnitData(currentUnit);
 }
 
+// 切換單元
 function switchUnitSelect() {
-    currentUnit = parseInt(document.getElementById('unitSelect').value);
-    vocabs = loadUnitData(currentUnit);
-    quizMode = false;
-    document.getElementById('quizInfo').style.display = 'none';
-    render();
+  currentUnit = parseInt(document.getElementById('unitSelect').value, 10);
+  vocabs = loadUnitData(currentUnit);
+  quizMode = false;
+  document.getElementById('quizInfo').style.display = 'none';
+  // 換單元時清空範圍
+  document.getElementById('rangeStart').value = "";
+  document.getElementById('rangeEnd').value = "";
+  render();
 }
 
+// 抽考：自訂範圍
 function startQuiz() {
-    const total = vocabs.length;
-    if (!total) return;
+  const total = vocabs.length;
+  if (!total) return;
 
-    let qStart = parseInt(prompt(`隨機範圍 - 從第幾筆開始？ (1 ~ ${total})`, "1")) || 1;
-    let qEnd = parseInt(prompt(`隨機範圍 - 到第幾筆結束？ (${qStart} ~ ${total})`, total)) || total;
-    
-    // 確保範圍有效
-    qStart = Math.max(1, Math.min(qStart, total));
-    qEnd = Math.max(qStart, Math.min(qEnd, total));
+  let qStart = parseInt(prompt(`隨機範圍 - 從第幾筆開始？ (1 ~ ${total})`, "1"), 10);
+  if (isNaN(qStart)) qStart = 1;
+  let qEnd = parseInt(prompt(`隨機範圍 - 到第幾筆結束？ (${qStart} ~ ${total})`, total), 10);
+  if (isNaN(qEnd)) qEnd = total;
 
-    let n = parseInt(prompt(`要在第 ${qStart} 到 ${qEnd} 筆中抽幾題？`, "10")) || 10;
-    
-    // 取得該範圍的所有索引
-    const rangeIndices = [];
-    for (let i = qStart - 1; i < qEnd; i++) {
-        rangeIndices.push(i);
-    }
+  qStart = Math.max(1, Math.min(qStart, total));
+  qEnd = Math.max(qStart, Math.min(qEnd, total));
 
-    // 隨機排列並選取數量
-    quizList = rangeIndices.sort(() => Math.random() - 0.5).slice(0, n);
-    quizMode = true;
-    document.getElementById('quizInfo').style.display = 'inline';
-    render();
+  let n = parseInt(prompt(`要在第 ${qStart} 到 ${qEnd} 筆中抽幾題？`, "10"), 10);
+  if (isNaN(n) || n <= 0) return;
+  const maxCount = qEnd - qStart + 1;
+  if (n > maxCount) n = maxCount;
+
+  const rangeIndices = [];
+  for (let i = qStart - 1; i < qEnd; i++) {
+    rangeIndices.push(i);
+  }
+  quizList = rangeIndices.sort(() => Math.random() - 0.5).slice(0, n);
+  quizMode = true;
+  document.getElementById('quizInfo').style.display = 'inline';
+
+  // 顯示剛剛選的範圍
+  document.getElementById('rangeStart').value = qStart;
+  document.getElementById('rangeEnd').value = qEnd;
+
+  render();
 }
 
+// 渲染
 function render() {
-    const query = document.getElementById('searchInput').value.toLowerCase();
-    const body = document.getElementById('vocabBody');
-    const startVal = document.getElementById('rangeStart').value;
-    const endVal = document.getElementById('rangeEnd').value;
-    const start = startVal === "" ? 1 : parseInt(startVal);
-    const end = endVal === "" ? 999 : parseInt(endVal);
+  const query = document.getElementById('searchInput').value.toLowerCase();
+  const body = document.getElementById('vocabBody');
+  const startVal = document.getElementById('rangeStart').value;
+  const endVal = document.getElementById('rangeEnd').value;
 
-    let filtered = vocabs.map((v, i) => ({ ...v, _index: i }))
-        .filter(v => (v.word.toLowerCase().includes(query) || v.chinese.includes(query)) && (onlyShowFavorites ? v.favorite : true));
+  const start = startVal === "" ? 1 : parseInt(startVal, 10);
+  const end = endVal === "" ? vocabs.length : parseInt(endVal, 10);
 
-    if (quizMode) filtered = filtered.filter(v => quizList.includes(v._index));
+  let filtered = vocabs
+    .map((v, i) => ({ ...v, _index: i }))
+    .filter(v =>
+      (v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query)) &&
+      (onlyShowFavorites ? v.favorite : true)
+    );
 
-    const displayList = filtered.slice(start - 1, end);
+  if (quizMode) {
+    filtered = filtered.filter(v => quizList.includes(v._index));
+  }
 
-    body.innerHTML = displayList.map((item, idx) => {
-        const posKey = item.pos.replace('.', '').replace('/', '').toLowerCase();
-        return `
-            <tr>
-                <td>${start + idx} ${quizMode ? '<span class="quiz-badge">Q</span>' : ''}</td>
-                <td>
-                    <span class="star-icon ${item.favorite ? 'active' : ''}" onclick="toggleStar(${item._index})">★</span>
-                    <button class="audio-btn" onclick="speak('${item.word.replace(/'/g, "\\'")}', 0.8)">🔊</button>
-                    <span class="${hideWord ? 'hidden-text' : 'word-text'}" onclick="this.classList.toggle('hidden-text')">${item.word}</span>
-                </td>
-                <td>
-                    <span class="pos-tag pos-${posKey}">${item.pos}</span>
-                    <span class="${hideDef ? 'hidden-text' : ''}" onclick="this.classList.toggle('hidden-text')">${item.chinese}</span>
-                </td>
-                <td>
-                    <div class="example-en">${item.exampleEn}</div>
-                    <div class="${hideDef ? 'hidden-text' : 'example-ch'}" onclick="this.classList.toggle('hidden-text')">${item.exampleCh}</div>
-                </td>
-                <td><button style="border:none; background:none; cursor:pointer;" onclick="deleteWord(${item._index})">🗑️</button></td>
-            </tr>
-        `;
-    }).join('');
+  const displayList = filtered.slice(start - 1, end);
+
+  body.innerHTML = displayList.map((item, idx) => {
+    const posKey = item.pos.replace('.', '').replace('/', '').toLowerCase();
+    const rowIndex = start + idx;
+    const quizBadge = quizMode ? '<span class="quiz-badge">Q</span>' : '';
+
+    const wordCellClass = hideWord ? 'hidden-text' : 'word-text';
+    const defHiddenClass = hideDef ? 'hidden-text' : '';
+    const chHiddenClass = hideDef ? 'hidden-text' : 'example-ch';
+
+    return `
+      <tr>
+        <td>${rowIndex} ${quizBadge}</td>
+        <td>
+          <span class="star-icon ${item.favorite ? 'active' : ''}"
+                onclick="toggleStar(${item._index})">★</span>
+          <button class="audio-btn"
+                  onclick="speak('${item.word.replace(/'/g, "\\'")}', 0.8)">🔊</button>
+          <span class="${wordCellClass}"
+                onclick="this.classList.toggle('hidden-text')">${item.word}</span>
+        </td>
+        <td>
+          <span class="pos-tag pos-${posKey}">${item.pos}</span>
+          <span class="${defHiddenClass}"
+                onclick="this.classList.toggle('hidden-text')">${item.chinese}</span>
+        </td>
+        <td>
+          <div class="example-en">${item.exampleEn}</div>
+          <div class="${chHiddenClass}"
+               onclick="this.classList.toggle('hidden-text')">${item.exampleCh}</div>
+        </td>
+        <td>
+          <button style="border:none; background:none; cursor:pointer;"
+                  onclick="deleteWord(${item._index})">🗑️</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
-function toggleStar(idx) { vocabs[idx].favorite = !vocabs[idx].favorite; save(); }
-function deleteWord(idx) { if(confirm("確定刪除？")) { vocabs.splice(idx, 1); save(); } }
-function toggleFilter() { onlyShowFavorites = !onlyShowFavorites; document.getElementById('filterBtn').classList.toggle('active'); render(); }
-function toggleHideWord() { hideWord = !hideWord; render(); }
-function toggleHideDef() { hideDef = !hideDef; render(); }
-function resetData() { if(confirm("確定還原預設？")) { vocabs = [...unitDefaults[currentUnit]]; quizMode = false; document.getElementById('quizInfo').style.display='none'; save(); } }
-function speak(t, r) { window.speechSynthesis.cancel(); const m = new SpeechSynthesisUtterance(t); m.rate = r; window.speechSynthesis.speak(m); }
+// 收藏 / 刪除 / 篩選 / 隱藏
+function toggleStar(idx) {
+  vocabs[idx].favorite = !vocabs[idx].favorite;
+  save();
+}
+function deleteWord(idx) {
+  if (confirm("確定刪除？")) {
+    vocabs.splice(idx, 1);
+    save();
+  }
+}
+function toggleFilter() {
+  onlyShowFavorites = !onlyShowFavorites;
+  document.getElementById('filterBtn').classList.toggle('active');
+  render();
+}
+function toggleHideWord() {
+  hideWord = !hideWord;
+  render();
+}
+// 隱藏中文時，順便把中文翻譯和中例句一起藏
+function toggleHideDef() {
+  hideDef = !hideDef;
+  render();
+}
 
-// 回到頂部功能
+// 還原單元
+function resetData() {
+  if (confirm("確定還原預設？")) {
+    vocabs = [...unitDefaults[currentUnit]];
+    quizMode = false;
+    document.getElementById('quizInfo').style.display='none';
+    save();
+  }
+}
+
+// 發音
+function speak(t, r) {
+  window.speechSynthesis.cancel();
+  const m = new SpeechSynthesisUtterance(t);
+  m.rate = r;
+  window.speechSynthesis.speak(m);
+}
+
+// 回到頂部
 window.onscroll = function() {
-    const btn = document.getElementById("backToTopBtn");
-    if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
-        btn.style.display = "block";
-    } else {
-        btn.style.display = "none";
-    }
+  const btn = document.getElementById("backToTopBtn");
+  if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+    btn.style.display = "block";
+  } else {
+    btn.style.display = "none";
+  }
 };
-function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
+// 初始執行
 initUnitSelect();
 render();
 </script>
+
+    
 </body>
 </html>
