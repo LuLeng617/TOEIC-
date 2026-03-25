@@ -1321,35 +1321,29 @@ function startQuiz() {
 function render() {
   const query = document.getElementById('searchInput').value.toLowerCase();
   const body = document.getElementById('vocabBody');
-  const startVal = document.getElementById('rangeStart').value;
-  const endVal = document.getElementById('rangeEnd').value;
+  let startVal = document.getElementById('rangeStart').value;
+  let endVal = document.getElementById('rangeEnd').value;
 
   const start = startVal === "" ? 1 : parseInt(startVal, 10);
   const end = endVal === "" ? vocabs.length : parseInt(endVal, 10);
 
   let filtered = vocabs
-    .map((v, i) => ({ ...v, _index: i }))
-    .filter(v =>
-      (v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query)) &&
-      (onlyShowFavorites ? v.favorite : true)
-    );
+        .map((v, i) => ({ ...v, _index: i }))
+        .filter(v =>
+            (v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query)) &&
+            (onlyShowFavorites ? v.favorite : true)
+        );
 
   if (quizMode) {
-    filtered = filtered.filter(v => quizList.includes(v._index));
-  }
+        filtered = filtered.filter(v => quizList.includes(v._index));
+    }
 
-  const displayList = filtered.slice(start - 1, end);
+    // 🔥 關鍵點：使用 slice 根據 start 和 end 擷取要顯示的片段
+    // 因為程式索引從 0 開始，所以 start 要減 1
+    const displayList = filtered.slice(start - 1, end);
 
-  body.innerHTML = displayList.map((item, idx) => {
-    const posKey = item.pos.replace('.', '').replace('/', '').toLowerCase();
-    const rowIndex = start + idx;
-    const quizBadge = quizMode ? '<span class="quiz-badge">Q</span>' : '';
-
-    const wordCellClass = hideWord ? 'hidden-text' : 'word-text';
-    const defHiddenClass = hideDef ? 'hidden-text' : '';
-    const chHiddenClass = hideDef ? 'hidden-text' : 'example-ch';
-
-    return `
+    // 5. 將原本後面的 body.innerHTML 渲染邏輯接下去...
+    body.innerHTML = displayList.map((item, idx) =>
       <tr>
         <td>${rowIndex} ${quizBadge}</td>
         <td>
