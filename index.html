@@ -33,12 +33,11 @@
         .pos-n { background: #f59e0b; }
         .pos-v { background: #3b82f6; }
         .pos-adj { background: #10b981; }
-        .audio-btn { background: #f1f5f9; border: none; border-radius: 50%; width: 26px; height: 26px; cursor: pointer; color: #2563eb; margin-right: 4px; }
-        .example-ch { color: #94a3b8; font-size: 0.85rem; display: block; margin-top: 4px; }
-        .hidden-text { background: #cbd5e1 !important; color: transparent !important; border-radius: 4px; cursor: pointer; transition: 0.2s; }
-        .hidden-text:hover { background: #adb5bd !important; }
-        .quiz-badge { background: #ffedd5; color: #c05621; padding: 2px 5px; border-radius: 4px; font-size: 10px; margin-left: 4px; }
-        #backToTopBtn { position: fixed; right: 20px; bottom: 20px; display: none; background: var(--primary); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); font-size: 20px; z-index: 1000; text-align: center; line-height: 45px; }
+        .audio-btn { background: #f1f5f9; border: none; border-radius: 50%; width: 26px; height: 26px; cursor: pointer; color: #2563eb; }
+        .example-ch { color: #94a3b8; font-size: 0.85rem; display: block; }
+        .hidden-text { background: #cbd5e1 !important; color: transparent !important; border-radius: 4px; cursor: pointer; }
+        .quiz-badge { background: #ffedd5; color: #c05621; padding: 2px 5px; border-radius: 4px; font-size: 10px; }
+        #backToTopBtn { position: fixed; right: 20px; bottom: 20px; display: none; background: var(--primary); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); font-size: 20px; z-index: 1000; }
     </style>
 </head>
 <body>
@@ -53,12 +52,12 @@
             </div>
             <div class="range-controls">
                 <span>顯示第</span>
-                <input type="number" id="rangeStart" placeholder="">
+                <input type="number" id="rangeStart" placeholder="" onchange="render()">
                 <span>到</span>
-                <input type="number" id="rangeEnd" placeholder="">
+                <input type="number" id="rangeEnd" placeholder="" onchange="render()">
                 <span>筆</span>
             </div>
-            <button class="btn btn-quiz" onclick="startRandom()">🎲 隨機</button>
+            <button class="btn btn-quiz" onclick="startQuiz()">🎲 隨機</button>
         </div>
         <div class="controls">
             <input type="text" id="searchInput" placeholder="搜尋..." onkeyup="render()">
@@ -79,9 +78,9 @@
 <button id="backToTopBtn" onclick="scrollToTop()">↑</button>
 
 <script>
-// 單字資料庫
+// 單字資料庫 (前 150 個)
 const unitDefaults = {
-    1: [], // 請在此處貼入之前的 150 個單字資料
+    1: [],
     2: [const wordBank = [
     { word: "a bachelor's degree", pos: "n.", chinese: "學士學位", exampleEn: "This job requires at least a bachelor's degree in business.", exampleCh: "這份工作要求至少有商學學士學位。", favorite: false },
     { word: "a degree", pos: "n.", chinese: "(n.)部分地；在某種程度上", exampleEn: "She's got a bachelor's/master's degree in history from Yale.", exampleCh: "她獲得了耶魯大學歷史專業的學士/碩士學位。", favorite: false },
@@ -237,8 +236,8 @@ const unitDefaults = {
 
 let currentUnit = 1;
 let vocabs = [];
-let randomOrder = [];
-let isRandomMode = false;
+let quizMode = false;
+let quizList = [];
 let onlyShowFavorites = false;
 let hideWord = false;
 let hideDef = false;
@@ -262,33 +261,33 @@ function initUnitSelect() {
 function switchUnitSelect() {
     currentUnit = parseInt(document.getElementById('unitSelect').value);
     vocabs = loadUnitData(currentUnit);
-    isRandomMode = false;
+    quizMode = false;
     document.getElementById('quizInfo').style.display = 'none';
     render();
 }
 
-// 核心隨機功能：自動偵測範圍
-function startRandom() {
+function startQuiz() {
     const total = vocabs.length;
     if (!total) return;
 
-    const sVal = document.getElementById('rangeStart').value;
-    const eVal = document.getElementById('rangeEnd').value;
+    let qStart = parseInt(prompt(`隨機範圍 - 從第幾筆開始？ (1 ~ ${total})`, "1")) || 1;
+    let qEnd = parseInt(prompt(`隨機範圍 - 到第幾筆結束？ (${qStart} ~ ${total})`, total)) || total;
     
-    // 若沒填，預設為全部範圍
-    const start = sVal === "" ? 1 : parseInt(sVal);
-    const end = eVal === "" ? total : parseInt(eVal);
+    // 確保範圍有效
+    qStart = Math.max(1, Math.min(qStart, total));
+    qEnd = Math.max(qStart, Math.min(qEnd, total));
 
-    const sIdx = Math.max(0, start - 1);
-    const eIdx = Math.min(total, end);
-
-    const pool = [];
-    for (let i = sIdx; i < eIdx; i++) {
-        pool.push(i);
+    let n = parseInt(prompt(`要在第 ${qStart} 到 ${qEnd} 筆中抽幾題？`, "10")) || 10;
+    
+    // 取得該範圍的所有索引
+    const rangeIndices = [];
+    for (let i = qStart - 1; i < qEnd; i++) {
+        rangeIndices.push(i);
     }
 
-    randomOrder = pool.sort(() => Math.random() - 0.5);
-    isRandomMode = true;
+    // 隨機排列並選取數量
+    quizList = rangeIndices.sort(() => Math.random() - 0.5).slice(0, n);
+    quizMode = true;
     document.getElementById('quizInfo').style.display = 'inline';
     render();
 }
@@ -296,32 +295,25 @@ function startRandom() {
 function render() {
     const query = document.getElementById('searchInput').value.toLowerCase();
     const body = document.getElementById('vocabBody');
-    
-    let displayIndices = [];
+    const startVal = document.getElementById('rangeStart').value;
+    const endVal = document.getElementById('rangeEnd').value;
+    const start = startVal === "" ? 1 : parseInt(startVal);
+    const end = endVal === "" ? 999 : parseInt(endVal);
 
-    if (isRandomMode) {
-        displayIndices = randomOrder;
-    } else {
-        const sVal = document.getElementById('rangeStart').value;
-        const eVal = document.getElementById('rangeEnd').value;
-        const start = sVal === "" ? 1 : parseInt(sVal);
-        const end = eVal === "" ? 999 : parseInt(eVal);
+    let filtered = vocabs.map((v, i) => ({ ...v, _index: i }))
+        .filter(v => (v.word.toLowerCase().includes(query) || v.chinese.includes(query)) && (onlyShowFavorites ? v.favorite : true));
 
-        const filtered = vocabs.map((v, i) => ({ ...v, _index: i }))
-            .filter(v => (v.word.toLowerCase().includes(query) || v.chinese.includes(query)) && (onlyShowFavorites ? v.favorite : true));
-        
-        displayIndices = filtered.slice(start - 1, end).map(v => v._index);
-    }
+    if (quizMode) filtered = filtered.filter(v => quizList.includes(v._index));
 
-    body.innerHTML = displayIndices.map((origIdx) => {
-        const item = vocabs[origIdx];
-        const posKey = item.pos ? item.pos.replace('.', '').replace('/', '').toLowerCase() : 'adj';
-        
+    const displayList = filtered.slice(start - 1, end);
+
+    body.innerHTML = displayList.map((item, idx) => {
+        const posKey = item.pos.replace('.', '').replace('/', '').toLowerCase();
         return `
             <tr>
-                <td>${origIdx + 1} ${isRandomMode ? '<span class="quiz-badge">R</span>' : ''}</td>
+                <td>${start + idx} ${quizMode ? '<span class="quiz-badge">Q</span>' : ''}</td>
                 <td>
-                    <span class="star-icon ${item.favorite ? 'active' : ''}" onclick="toggleStar(${origIdx})">★</span>
+                    <span class="star-icon ${item.favorite ? 'active' : ''}" onclick="toggleStar(${item._index})">★</span>
                     <button class="audio-btn" onclick="speak('${item.word.replace(/'/g, "\\'")}', 0.8)">🔊</button>
                     <span class="${hideWord ? 'hidden-text' : 'word-text'}" onclick="this.classList.toggle('hidden-text')">${item.word}</span>
                 </td>
@@ -333,7 +325,7 @@ function render() {
                     <div class="example-en">${item.exampleEn}</div>
                     <div class="${hideDef ? 'hidden-text' : 'example-ch'}" onclick="this.classList.toggle('hidden-text')">${item.exampleCh}</div>
                 </td>
-                <td><button style="border:none; background:none; cursor:pointer;" onclick="deleteWord(${origIdx})">🗑️</button></td>
+                <td><button style="border:none; background:none; cursor:pointer;" onclick="deleteWord(${item._index})">🗑️</button></td>
             </tr>
         `;
     }).join('');
@@ -344,27 +336,17 @@ function deleteWord(idx) { if(confirm("確定刪除？")) { vocabs.splice(idx, 1
 function toggleFilter() { onlyShowFavorites = !onlyShowFavorites; document.getElementById('filterBtn').classList.toggle('active'); render(); }
 function toggleHideWord() { hideWord = !hideWord; render(); }
 function toggleHideDef() { hideDef = !hideDef; render(); }
+function resetData() { if(confirm("確定還原預設？")) { vocabs = [...unitDefaults[currentUnit]]; quizMode = false; document.getElementById('quizInfo').style.display='none'; save(); } }
+function speak(t, r) { window.speechSynthesis.cancel(); const m = new SpeechSynthesisUtterance(t); m.rate = r; window.speechSynthesis.speak(m); }
 
-function resetData() { 
-    if(confirm("確定還原預設？")) { 
-        vocabs = [...unitDefaults[currentUnit]]; 
-        isRandomMode = false; 
-        document.getElementById('quizInfo').style.display='none'; 
-        save(); 
-    } 
-}
-
-function speak(t, r) { 
-    window.speechSynthesis.cancel(); 
-    const m = new SpeechSynthesisUtterance(t); 
-    m.rate = r; 
-    window.speechSynthesis.speak(m); 
-}
-
-// 置頂功能
+// 回到頂部功能
 window.onscroll = function() {
     const btn = document.getElementById("backToTopBtn");
-    btn.style.display = (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) ? "block" : "none";
+    if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+        btn.style.display = "block";
+    } else {
+        btn.style.display = "none";
+    }
 };
 function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
