@@ -1239,136 +1239,106 @@ let onlyShowFavorites = false;
 let hideWord = false;
 let hideDef = false;
 
-// 讀寫 localStorage
 function loadUnitData(unit) {
-  const saved = localStorage.getItem(`toeic_unit_${unit}`);
-  return saved ? JSON.parse(saved) : [...(unitDefaults[unit] || [])];
+    const saved = localStorage.getItem(`toeic_unit_${unit}`);
+    return saved ? JSON.parse(saved) : [...(unitDefaults[unit] || [])];
 }
+
 function save() {
-  localStorage.setItem(`toeic_unit_${currentUnit}`, JSON.stringify(vocabs));
-  render();
+    localStorage.setItem(`toeic_unit_${currentUnit}`, JSON.stringify(vocabs));
+    render();
 }
 
-// 初始化單元選單
 function initUnitSelect() {
-  const select = document.getElementById('unitSelect');
-  select.innerHTML = Object.keys(unitDefaults)
-    .map(i => `<option value="${i}">Unit ${i}</option>`).join('');
-  vocabs = loadUnitData(currentUnit);
+    const select = document.getElementById('unitSelect');
+    select.innerHTML = Object.keys(unitDefaults)
+        .map(i => `<option value="${i}">Unit ${i}</option>`).join('');
+    vocabs = loadUnitData(currentUnit);
 }
 
-// ✅ 顯示範圍（第 ? 到 ? 筆）
-let rangeStart = null;
-let rangeEnd = null;
-
-function onRangeChange() {
-  const s = document.getElementById('rangeStart').value;
-  const e = document.getElementById('rangeEnd').value;
-
-  rangeStart = s ? parseInt(s, 10) : null;
-  rangeEnd   = e ? parseInt(e, 10) : null;
-
-  render();
-}
-
-// 切換單元
 function switchUnitSelect() {
-  currentUnit = parseInt(document.getElementById('unitSelect').value, 10);
-  vocabs = loadUnitData(currentUnit);
-  quizMode = false;
-  document.getElementById('quizInfo').style.display = 'none';
-  // 換單元時清空範圍
-  document.getElementById('rangeStart').value = "";
-  document.getElementById('rangeEnd').value = "";
-  render();
+    currentUnit = parseInt(document.getElementById('unitSelect').value, 10);
+    vocabs = loadUnitData(currentUnit);
+    quizMode = false;
+    document.getElementById('quizInfo').style.display = 'none';
+    document.getElementById('rangeStart').value = "";
+    document.getElementById('rangeEnd').value = "";
+    render();
 }
 
-
-// 抽考：自訂範圍
+// 抽考功能
 function startQuiz() {
-  const total = vocabs.length;
-  if (!total) return;
-
-  let qStart = parseInt(prompt(`隨機範圍 - 從第幾筆開始？ (1 ~ ${total})`, "1"), 10);
-  if (isNaN(qStart)) qStart = 1;
-  let qEnd = parseInt(prompt(`隨機範圍 - 到第幾筆結束？ (${qStart} ~ ${total})`, total), 10);
-  if (isNaN(qEnd)) qEnd = total;
-
-  qStart = Math.max(1, Math.min(qStart, total));
-  qEnd = Math.max(qStart, Math.min(qEnd, total));
-
-  let n = parseInt(prompt(`要在第 ${qStart} 到 ${qEnd} 筆中抽幾題？`, "10"), 10);
-  if (isNaN(n) || n <= 0) return;
-  const maxCount = qEnd - qStart + 1;
-  if (n > maxCount) n = maxCount;
-
-  const rangeIndices = [];
-  for (let i = qStart - 1; i < qEnd; i++) {
-    rangeIndices.push(i);
-  }
-  quizList = rangeIndices.sort(() => Math.random() - 0.5).slice(0, n);
-  quizMode = true;
-  document.getElementById('quizInfo').style.display = 'inline';
-
-  // 顯示剛剛選的範圍
-  document.getElementById('rangeStart').value = qStart;
-  document.getElementById('rangeEnd').value = qEnd;
-
-  render();
+    const total = vocabs.length;
+    if (!total) return;
+    let qStart = parseInt(prompt(`隨機範圍 - 從第幾筆開始？ (1 ~ ${total})`, "1"), 10) || 1;
+    let qEnd = parseInt(prompt(`隨機範圍 - 到第幾筆結束？ (${qStart} ~ ${total})`, total), 10) || total;
+    qStart = Math.max(1, Math.min(qStart, total));
+    qEnd = Math.max(qStart, Math.min(qEnd, total));
+    let n = parseInt(prompt(`要在第 ${qStart} 到 ${qEnd} 筆中抽幾題？`, "10"), 10) || 10;
+    
+    const rangeIndices = [];
+    for (let i = qStart - 1; i < qEnd; i++) { rangeIndices.push(i); }
+    quizList = rangeIndices.sort(() => Math.random() - 0.5).slice(0, n);
+    quizMode = true;
+    document.getElementById('quizInfo').style.display = 'inline';
+    render();
 }
 
-// 渲染
+// 🔥 修正後的渲染邏輯
 function render() {
-  const query = document.getElementById('searchInput').value.toLowerCase();
-  const body = document.getElementById('vocabBody');
-  let startVal = document.getElementById('rangeStart').value;
-  let endVal = document.getElementById('rangeEnd').value;
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const body = document.getElementById('vocabBody');
+    
+    // 讀取範圍值
+    const startInput = document.getElementById('rangeStart').value;
+    const endInput = document.getElementById('rangeEnd').value;
+    
+    // 邏輯處理：如果沒填，預設為 1 到 最後一筆
+    const start = startInput === "" ? 1 : Math.max(1, parseInt(startInput, 10));
+    const end = endInput === "" ? vocabs.length : Math.min(vocabs.length, parseInt(endInput, 10));
 
-  const start = startVal === "" ? 1 : parseInt(startVal, 10);
-  const end = endVal === "" ? vocabs.length : parseInt(endVal, 10);
-
-  let filtered = vocabs
+    // 1. 過濾搜尋與收藏
+    let filtered = vocabs
         .map((v, i) => ({ ...v, _index: i }))
         .filter(v =>
             (v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query)) &&
             (onlyShowFavorites ? v.favorite : true)
         );
 
-  if (quizMode) {
+    // 2. 如果是隨機模式
+    if (quizMode) {
         filtered = filtered.filter(v => quizList.includes(v._index));
     }
 
-    // 🔥 關鍵點：使用 slice 根據 start 和 end 擷取要顯示的片段
-    // 因為程式索引從 0 開始，所以 start 要減 1
+    // 3. 執行範圍切片 (真正的範圍功能)
     const displayList = filtered.slice(start - 1, end);
 
-    // 5. 將原本後面的 body.innerHTML 渲染邏輯接下去...
-    body.innerHTML = displayList.map((item, idx) =>
-      <tr>
-        <td>${rowIndex} ${quizBadge}</td>
-        <td>
-          <span class="star-icon ${item.favorite ? 'active' : ''}"
-                onclick="toggleStar(${item._index})">★</span>
-          <button class="audio-btn"
-                  onclick="speak('${item.word.replace(/'/g, "\\'")}', 0.8)">🔊</button>
-          <span class="${wordCellClass}"
-                onclick="this.classList.toggle('hidden-text')">${item.word}</span>
-        </td>
-        <td>
-          <span class="pos-tag pos-${posKey}">${item.pos}</span>
-          <span class="${defHiddenClass}"
-                onclick="this.classList.toggle('hidden-text')">${item.chinese}</span>
-        </td>
-        <td>
-          <div class="example-en">${item.exampleEn}</div>
-          <div class="${chHiddenClass}"
-               onclick="this.classList.toggle('hidden-text')">${item.exampleCh}</div>
-        </td>
-      </tr>
-    `;
-  }).join('');
-}
+    body.innerHTML = displayList.map((item, idx) => {
+        const posKey = item.pos.replace('.', '').replace('/', '').toLowerCase();
+        const wordCellClass = hideWord ? 'hidden-text' : 'word-text';
+        const defHiddenClass = hideDef ? 'hidden-text' : '';
+        const chHiddenClass = hideDef ? 'hidden-text' : 'example-ch';
 
+        return `
+            <tr>
+                <td>${item._index + 1}</td>
+                <td>
+                    <span class="star-icon ${item.favorite ? 'active' : ''}" onclick="toggleStar(${item._index})">★</span>
+                    <button class="audio-btn" onclick="speak('${item.word.replace(/'/g, "\\'")}', 0.8)">🔊</button>
+                    <span class="${wordCellClass}" onclick="this.classList.toggle('hidden-text')">${item.word}</span>
+                </td>
+                <td>
+                    <span class="pos-tag pos-${posKey}">${item.pos}</span>
+                    <span class="${defHiddenClass}" onclick="this.classList.toggle('hidden-text')">${item.chinese}</span>
+                </td>
+                <td>
+                    <div class="example-en">${item.exampleEn}</div>
+                    <div class="${chHiddenClass}" onclick="this.classList.toggle('hidden-text')">${item.exampleCh}</div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
 // 收藏 / 刪除 / 篩選 / 隱藏
 function toggleStar(idx) {
   vocabs[idx].favorite = !vocabs[idx].favorite;
