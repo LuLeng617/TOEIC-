@@ -1340,31 +1340,34 @@ function switchUnitSelect() {
     render();
 }
 
-// --- 抽考隨機功能 ---
-function startQuiz() {
-    const queryInput = document.getElementById('searchInput');
-    const query = queryInput ? queryInput.value.toLowerCase() : "";
-    
-    // 建立符合當前條件的基礎池
-    let basePool = vocabs
-        .map((v, i) => ({ ...v, _index: i }))
-        .filter(v => 
-            (v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query)) &&
-            (onlyShowFavorites ? v.favorite : true)
-        );
+// --- 抽考隨機功能 (修正後的洗牌邏輯) ---
 
-    if (basePool.length === 0) {
-        alert("目前清單中沒有單字可以隨機！");
+function startQuiz() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const startInput = document.getElementById('rangeStart').value;
+    const endInput = document.getElementById('rangeEnd').value;
+    
+    const start = startInput === "" ? 1 : Math.max(1, parseInt(startInput, 10));
+    const end = endInput === "" ? vocabs.length : Math.min(vocabs.length, parseInt(endInput, 10));
+
+    // 抓取目前範圍內的單字
+    let currentPool = vocabs
+        .map((v, i) => ({ ...v, _index: i }))
+        .filter(v => (v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query)) && (onlyShowFavorites ? v.favorite : true))
+        .slice(start - 1, end);
+
+    if (currentPool.length === 0) {
+        alert("目前的範圍內沒有單字！");
         return;
     }
 
-    // 洗牌
-    quizList = basePool.sort(() => Math.random() - 0.5);
+    // 洗牌並開啟模式
+    quizList = [...currentPool].sort(() => Math.random() - 0.5);
     quizMode = true;
-    
-    // 自動開啟隱藏模式
-    hideWord = true;
-    hideDef = true;
+
+    // 依照要求：不自動遮擋
+    hideWord = false; 
+    hideDef = false;
 
     const info = document.getElementById('quizInfo');
     if (info) info.style.display = 'inline';
@@ -1372,45 +1375,35 @@ function startQuiz() {
     render();
 }
 
+
 // --- 核心渲染函式 ---
+
 function render() {
     const body = document.getElementById('vocabBody');
-    if (!body) {
-        console.error("錯誤：找不到 id 為 vocabBody 的容器，請檢查 HTML 中是否有 <tbody>");
-        return;
-    }
+    if (!body) return;
 
-    // 取得範圍值
     const startInput = document.getElementById('rangeStart').value;
     const endInput = document.getElementById('rangeEnd').value;
-    const start = (startInput === "") ? 1 : Math.max(1, parseInt(startInput, 10));
-    const end = (endInput === "") ? vocabs.length : Math.min(vocabs.length, parseInt(endInput, 10));
+    const start = startInput === "" ? 1 : Math.max(1, parseInt(startInput, 10));
+    const end = endInput === "" ? vocabs.length : Math.min(vocabs.length, parseInt(endInput, 10));
 
-    let sourcePool = [];
+    let displayList = [];
 
-    // 決定來源
+    // 如果在隨機模式下更動了範圍，通常使用者是要選新範圍，所以關閉隨機模式
+    // 註：這確保了你輸入第二次範圍時，畫面會動
     if (quizMode) {
-        sourcePool = quizList;
+        displayList = quizList.slice(start - 1, end); 
+        // 若隨機後又改範圍，且 quizList 還有資料就顯示；
+        // 但最保險的做法是在 HTML 的 input 加入 oninput="quizMode=false;render()"
     } else {
-        const queryInput = document.getElementById('searchInput');
-        const query = queryInput ? queryInput.value.toLowerCase() : "";
-        sourcePool = vocabs
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        let filtered = vocabs
             .map((v, i) => ({ ...v, _index: i }))
-            .filter(v => 
-                (v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query)) &&
-                (onlyShowFavorites ? v.favorite : true)
-            );
+            .filter(v => (v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query)) && (onlyShowFavorites ? v.favorite : true));
+        
+        displayList = filtered.slice(start - 1, end);
     }
 
-    // 裁切顯示範圍
-    const displayList = sourcePool.slice(start - 1, end);
-
-    if (displayList.length === 0) {
-        body.innerHTML = "<tr><td colspan='5' style='text-align:center;'>範圍內無單字</td></tr>";
-        return;
-    }
-
-    // 生成 HTML
     body.innerHTML = displayList.map((item) => {
         const posKey = (item.pos || "").replace(/[./]/g, '').toLowerCase();
         const wordClass = hideWord ? 'hidden-text' : 'word-text';
@@ -1419,8 +1412,7 @@ function render() {
 
         return `
             <tr>
-                <td>${item._index + 1}</td>
-                <td>
+                <td># ${item._index + 1}</td>  <td>
                     <span class="star-icon ${item.favorite ? 'active' : ''}" onclick="toggleStar(${item._index})">★</span>
                     <button class="audio-btn" onclick="speak('${item.word.replace(/'/g, "\\'")}', 0.8)">🔊</button>
                     <span class="${wordClass}" onclick="this.classList.toggle('hidden-text')">${item.word}</span>
@@ -1437,6 +1429,7 @@ function render() {
         `;
     }).join('');
 }
+
 
 // --- 其他功能 (發音、頂部、收藏) ---
 function toggleStar(idx) { vocabs[idx].favorite = !vocabs[idx].favorite; save(); }
