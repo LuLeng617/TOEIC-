@@ -1291,6 +1291,7 @@ const unitDefaults = {
   13: []
 };
 
+// --- 基礎變數 ---
 let currentUnit = 1;
 let vocabs = [];
 let quizMode = false;
@@ -1299,6 +1300,7 @@ let onlyShowFavorites = false;
 let hideWord = false;
 let hideDef = false;
 
+// --- 資料讀寫 ---
 function loadUnitData(unit) {
     const saved = localStorage.getItem(`toeic_unit_${unit}`);
     return saved ? JSON.parse(saved) : [...(unitDefaults[unit] || [])];
@@ -1311,13 +1313,17 @@ function save() {
 
 function initUnitSelect() {
     const select = document.getElementById('unitSelect');
-    select.innerHTML = Object.keys(unitDefaults)
-        .map(i => `<option value="${i}">Unit ${i}</option>`).join('');
+    if (select) {
+        select.innerHTML = Object.keys(unitDefaults)
+            .map(i => `<option value="${i}">Unit ${i}</option>`).join('');
+    }
     vocabs = loadUnitData(currentUnit);
 }
 
 function switchUnitSelect() {
-    currentUnit = parseInt(document.getElementById('unitSelect').value, 10);
+    const select = document.getElementById('unitSelect');
+    if (!select) return;
+    currentUnit = parseInt(select.value, 10);
     vocabs = loadUnitData(currentUnit);
     quizMode = false;
     document.getElementById('quizInfo').style.display = 'none';
@@ -1326,10 +1332,12 @@ function switchUnitSelect() {
     render();
 }
 
+// --- 抽考隨機功能 ---
 function startQuiz() {
-    // 1. 取得目前過濾後的基礎池 (不看範圍，先看搜尋關鍵字跟收藏)
-    const query = document.getElementById('searchInput').value.toLowerCase();
+    const queryInput = document.getElementById('searchInput');
+    const query = queryInput ? queryInput.value.toLowerCase() : "";
     
+    // 建立符合當前條件的基礎池
     let basePool = vocabs
         .map((v, i) => ({ ...v, _index: i }))
         .filter(v => 
@@ -1338,44 +1346,46 @@ function startQuiz() {
         );
 
     if (basePool.length === 0) {
-        alert("沒有單字可以隨機！");
+        alert("目前清單中沒有單字可以隨機！");
         return;
     }
 
-    // 2. 將基礎池徹底洗牌
+    // 洗牌
     quizList = basePool.sort(() => Math.random() - 0.5);
-    quizMode = true; // 開啟隨機模式標記
+    quizMode = true;
     
-    // 進入抽考模式，自動遮住單字跟中文
+    // 自動開啟隱藏模式
     hideWord = true;
     hideDef = true;
 
-    // 顯示「隨機模式」的小標籤
     const info = document.getElementById('quizInfo');
     if (info) info.style.display = 'inline';
 
-    render(); // 呼叫繪製
+    render();
 }
 
-		function render() {
+// --- 核心渲染函式 ---
+function render() {
     const body = document.getElementById('vocabBody');
-    if (!body) return;
+    if (!body) {
+        console.error("錯誤：找不到 id 為 vocabBody 的容器，請檢查 HTML 中是否有 <tbody>");
+        return;
+    }
 
-    // 取得輸入框的範圍數值
+    // 取得範圍值
     const startInput = document.getElementById('rangeStart').value;
     const endInput = document.getElementById('rangeEnd').value;
-    const start = startInput === "" ? 1 : Math.max(1, parseInt(startInput, 10));
-    const end = endInput === "" ? vocabs.length : Math.min(vocabs.length, parseInt(endInput, 10));
+    const start = (startInput === "") ? 1 : Math.max(1, parseInt(startInput, 10));
+    const end = (endInput === "") ? vocabs.length : Math.min(vocabs.length, parseInt(endInput, 10));
 
     let sourcePool = [];
 
-    // --- 關鍵邏輯塊：決定資料源 ---
+    // 決定來源
     if (quizMode) {
-        // 如果是隨機模式，資料源就是洗牌後的 quizList
         sourcePool = quizList;
     } else {
-        // 如果是正常模式，重新過濾一次 vocabs
-        const query = document.getElementById('searchInput').value.toLowerCase();
+        const queryInput = document.getElementById('searchInput');
+        const query = queryInput ? queryInput.value.toLowerCase() : "";
         sourcePool = vocabs
             .map((v, i) => ({ ...v, _index: i }))
             .filter(v => 
@@ -1384,12 +1394,17 @@ function startQuiz() {
             );
     }
 
-    // --- 執行裁切 (不論哪種模式都看範圍框) ---
+    // 裁切顯示範圍
     const displayList = sourcePool.slice(start - 1, end);
 
-    // 渲染 HTML
+    if (displayList.length === 0) {
+        body.innerHTML = "<tr><td colspan='5' style='text-align:center;'>範圍內無單字</td></tr>";
+        return;
+    }
+
+    // 生成 HTML
     body.innerHTML = displayList.map((item) => {
-        const posKey = item.pos.replace('.', '').replace('/', '').toLowerCase();
+        const posKey = (item.pos || "").replace(/[./]/g, '').toLowerCase();
         const wordClass = hideWord ? 'hidden-text' : 'word-text';
         const defClass = hideDef ? 'hidden-text' : '';
         const exChClass = hideDef ? 'hidden-text' : 'example-ch';
@@ -1414,68 +1429,21 @@ function startQuiz() {
         `;
     }).join('');
 }
- 
-		
-// 收藏 / 刪除 / 篩選 / 隱藏
-function toggleStar(idx) {
-  vocabs[idx].favorite = !vocabs[idx].favorite;
-  save();
-}
-function deleteWord(idx) {
-  if (confirm("確定刪除？")) {
-    vocabs.splice(idx, 1);
-    save();
-  }
-}
-function toggleFilter() {
-  onlyShowFavorites = !onlyShowFavorites;
-  document.getElementById('filterBtn').classList.toggle('active');
-  render();
-}
-function toggleHideWord() {
-  hideWord = !hideWord;
-  render();
-}
-// 隱藏中文時，順便把中文翻譯和中例句一起藏
-function toggleHideDef() {
-  hideDef = !hideDef;
-  render();
-}
 
-// 還原單元
-function resetData() {
-  if (confirm("確定還原預設？")) {
-    vocabs = [...unitDefaults[currentUnit]];
-    quizMode = false;
-    document.getElementById('quizInfo').style.display='none';
-    save();
-  }
-}
-
-// 發音
-function speak(t, r) {
-  window.speechSynthesis.cancel();
-  const m = new SpeechSynthesisUtterance(t);
-  m.rate = r;
-  window.speechSynthesis.speak(m);
-}
-
-// 回到頂部
-window.onscroll = function() {
-  const btn = document.getElementById("backToTopBtn");
-  if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
-    btn.style.display = "block";
-  } else {
-    btn.style.display = "none";
-  }
-};
-function scrollToTop() {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+// --- 其他功能 (發音、頂部、收藏) ---
+function toggleStar(idx) { vocabs[idx].favorite = !vocabs[idx].favorite; save(); }
+function toggleFilter() { onlyShowFavorites = !onlyShowFavorites; document.getElementById('filterBtn').classList.toggle('active'); render(); }
+function toggleHideWord() { hideWord = !hideWord; render(); }
+function toggleHideDef() { hideDef = !hideDef; render(); }
+function resetData() { if (confirm("確定還原預設？")) { vocabs = [...unitDefaults[currentUnit]]; quizMode = false; document.getElementById('quizInfo').style.display='none'; save(); } }
+function speak(t, r) { window.speechSynthesis.cancel(); const m = new SpeechSynthesisUtterance(t); m.rate = r; window.speechSynthesis.speak(m); }
+function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
 // 初始執行
 initUnitSelect();
 render();
+
+
 </script>
 
 
