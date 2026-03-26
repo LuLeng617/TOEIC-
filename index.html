@@ -1370,9 +1370,11 @@ function startQuiz() {
 
 // 🔥 修正後的渲染邏輯
 function render() {
+    // 確保抓到的容器是正確的 (手機版請確認 HTML 裡有 <div id="vocabList"></div>)
+    const container = document.getElementById('vocabList') || document.getElementById('vocabBody');
+    if (!container) return;
+
     const query = document.getElementById('searchInput').value.toLowerCase();
-    const body = document.getElementById('vocabBody');
-    
     const startInput = document.getElementById('rangeStart').value;
     const endInput = document.getElementById('rangeEnd').value;
 
@@ -1385,13 +1387,13 @@ function render() {
             _index: originalIdx
         }));
     } else {
-        // 【一般模式】：先過濾搜尋/收藏，再根據範圍切片
+        // 【一般模式】：根據輸入範圍 (第 ? 到 ? 筆)
         const start = startInput === "" ? 1 : Math.max(1, parseInt(startInput, 10));
         const end = endInput === "" ? vocabs.length : Math.min(vocabs.length, parseInt(endInput, 10));
 
         let filtered = vocabs
             .map((v, i) => ({ ...v, _index: i }))
-            .filter(v =>
+            .filter(v => 
                 (v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query)) &&
                 (onlyShowFavorites ? v.favorite : true)
             );
@@ -1399,36 +1401,37 @@ function render() {
         displayList = filtered.slice(start - 1, end);
     }
 
-    // 渲染表格內容
-    body.innerHTML = displayList.map((item, idx) => {
+    // 渲染卡片內容 (這段產出的 HTML 結構是專為手機設計的)
+    container.innerHTML = displayList.map(item => {
         const posKey = item.pos.replace('.', '').replace('/', '').toLowerCase();
         
         // 根據開關狀態決定是否隱藏
-		const wordCellClass = hideWord ? 'hidden-text' : 'word-text';
+        const wordCellClass = hideWord ? 'hidden-text' : 'word-text';
         const defHiddenClass = hideDef ? 'hidden-text' : '';
         const chHiddenClass = hideDef ? 'hidden-text' : 'example-ch';
 
         return `
-            <tr>
-                <td>${item._index + 1}</td>
-                <td>
-                    <span class="star-icon ${item.favorite ? 'active' : ''}" onclick="toggleStar(${item._index})">★</span>
-                    <button class="audio-btn" onclick="speak('${item.word.replace(/'/g, "\\'")}', 0.8)">🔊</button>
-                    <span class="${wordCellClass}" onclick="this.classList.toggle('hidden-text')">${item.word}</span>
-                </td>
-                <td>
+            <div class="word-card ${quizMode ? 'is-quiz' : ''}">
+                <div class="card-top">
+                    <div class="index-tag"># ${item._index + 1}</div>
+                    <div class="action-btns">
+                        <span class="star-icon ${item.favorite ? 'active' : ''}" onclick="toggleStar(${item._index})">★</span>
+                        <button class="audio-btn" onclick="speak('${item.word.replace(/'/g, "\\'")}', 0.8)">🔊</button>
+                    </div>
+                </div>
+                <div>
                     <span class="pos-tag pos-${posKey}">${item.pos}</span>
-                    <span class="${defHiddenClass}" onclick="this.classList.toggle('hidden-text')">${item.chinese}</span>
-                </td>
-                <td>
+                    <span class="${wordCellClass}" onclick="this.classList.toggle('hidden-text')">${item.word}</span>
+                </div>
+                <span class="chinese-text ${defHiddenClass}" onclick="this.classList.toggle('hidden-text')">${item.chinese}</span>
+                <div class="example-box">
                     <div class="example-en">${item.exampleEn}</div>
                     <div class="${chHiddenClass}" onclick="this.classList.toggle('hidden-text')">${item.exampleCh}</div>
-                </td>
-            </tr>
+                </div>
+            </div>
         `;
     }).join('');
 }
-		
 // 收藏 / 刪除 / 篩選 / 隱藏
 function toggleStar(idx) {
   vocabs[idx].favorite = !vocabs[idx].favorite;
