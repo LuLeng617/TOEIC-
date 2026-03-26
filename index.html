@@ -1343,20 +1343,19 @@ function render() {
     const body = document.getElementById('vocabBody');
     if (!body) return;
 
-    const startInput = document.getElementById('rangeStart').value;
-    const endInput = document.getElementById('rangeEnd').value;
-    const start = startInput === "" ? 1 : Math.max(1, parseInt(startInput, 10));
-    const end = endInput === "" ? vocabs.length : Math.min(vocabs.length, parseInt(endInput, 10));
-
     let displayList = [];
 
-    // 如果在隨機模式下更動了範圍，通常使用者是要選新範圍，所以關閉隨機模式
-    // 註：這確保了你輸入第二次範圍時，畫面會動
     if (quizMode) {
-        displayList = quizList.slice(start - 1, end); 
-        // 若隨機後又改範圍，且 quizList 還有資料就顯示；
-        // 但最保險的做法是在 HTML 的 input 加入 oninput="quizMode=false;render()"
+        // 🔥 關鍵修正：如果是隨機模式，直接使用打亂後的清單，不要再 slice
+        // 因為 quizList 已經是你在 startQuiz 時根據範圍挑選並打亂的結果了
+        displayList = quizList;
     } else {
+        // 一般模式：才需要讀取範圍並裁切
+        const startInput = document.getElementById('rangeStart').value;
+        const endInput = document.getElementById('rangeEnd').value;
+        const start = startInput === "" ? 1 : Math.max(1, parseInt(startInput, 10));
+        const end = endInput === "" ? vocabs.length : Math.min(vocabs.length, parseInt(endInput, 10));
+
         const query = document.getElementById('searchInput').value.toLowerCase();
         let filtered = vocabs
             .map((v, i) => ({ ...v, _index: i }))
