@@ -1299,6 +1299,7 @@ const unitDefaults = {
   13: []
 };
 
+
 // --- 基礎變數 ---
 let currentUnit = 1;
 let vocabs = [];
@@ -1334,11 +1335,15 @@ function switchUnitSelect() {
     currentUnit = parseInt(select.value, 10);
     vocabs = loadUnitData(currentUnit);
     quizMode = false;
+    hideWord = false; // 切換單元時自動顯示答案
+    hideDef = false;
     document.getElementById('quizInfo').style.display = 'none';
     document.getElementById('rangeStart').value = "";
     document.getElementById('rangeEnd').value = "";
     render();
 }
+
+		
 
 // --- 抽考隨機功能 (修正後的洗牌邏輯) ---
 
