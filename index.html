@@ -5,75 +5,82 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TOEIC必考單字與片語</title>
     <style>
-        :root { --primary: #2563eb; --star: #f1c40f; --bg: #f1f5f9; --text: #1e293b; }
-        body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 12px; }
-        .container { max-width: 1250px; margin: auto; background: white; padding: 18px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        .header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
-        .header h1 { font-size: 20px; margin: 0; }
-        .top-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; color: #64748b; }
-        .unit-select-row { display: flex; align-items: center; gap: 6px; }
-        .unit-select-row select { padding: 6px 8px; border-radius: 999px; border: 1px solid #e2e8f0; background: #f8fafc; font-size: 13px; color: #334155; }
-        .range-controls { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #64748b; }
-        .range-controls input { width: 52px; padding: 3px 5px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 11px; }
-        .btn { padding: 6px 12px; border: none; border-radius: 999px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 4px; font-size: 12px; white-space: nowrap; }
-        .btn-quiz { background-color: #f97316; color: white; }
-        .controls { display: flex; gap: 8px; width: 100%; margin-top: 6px; flex-wrap: wrap; }
-        input#searchInput { flex-grow: 1; min-width: 160px; padding: 8px 10px; border: 2px solid #e2e8f0; border-radius: 10px; outline: none; font-size: 13px; }
-        .btn-filter { background-color: white; border: 2px solid #e2e8f0; color: #64748b; }
-        .btn-filter.active { background-color: var(--star); color: #856404; border-color: #f1c40f; }
-        .btn-reset { background-color: #fee2e2; color: #ef4444; }
+        :root { --primary: #2563eb; --star: #f1c40f; --bg: #f8fafc; --text: #1e293b; --card-bg: #ffffff; }
+        body { font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 10px; }
+        .container { max-width: 800px; margin: auto; }
+        
+        /* 標題與控制區塊 */
+        .header { background: white; padding: 15px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 15px; position: sticky; top: 10px; z-index: 100; }
+        .header h1 { font-size: 18px; margin: 0 0 10px 0; text-align: center; color: var(--primary); }
+        
+        .top-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; margin-bottom: 10px; }
+        .range-controls { display: flex; align-items: center; gap: 4px; font-size: 12px; background: #f1f5f9; padding: 4px 10px; border-radius: 999px; }
+        .range-controls input { width: 45px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; }
+        
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        input#searchInput { grid-column: span 2; padding: 10px; border: 2px solid #e2e8f0; border-radius: 12px; outline: none; }
+        
+        /* 按鈕樣式優化 */
+        .btn { padding: 10px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s; }
+        .btn-quiz { background-color: #f97316; color: white; grid-column: span 2; font-size: 15px; }
+        .btn-filter { background-color: white; border: 1px solid #e2e8f0; }
+        .btn-filter.active { background-color: var(--star); border-color: var(--star); color: #856404; }
         .btn-hide { background-color: #e0f2fe; color: #0369a1; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
-        th { background-color: #f8fafc; padding: 8px 6px; text-align: left; border-bottom: 2px solid #e2e8f0; color: #64748b; }
-        td { padding: 8px 6px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
-        .word-text { font-weight: 800; color: #2563eb; font-size: 1.05rem; }
-        .star-icon { cursor: pointer; color: #cbd5e1; font-size: 1.2rem; }
-        .star-icon.active { color: var(--star); }
-        .pos-tag { padding: 1px 4px; border-radius: 4px; font-size: 0.7rem; color: white; background: #94a3b8; font-weight: bold; }
+        .btn-reset { background-color: #fee2e2; color: #ef4444; }
+
+        /* 卡片設計 - 取代原本的 Table */
+        .word-card { background: var(--card-bg); border-radius: 16px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; border-left: 5px solid #e2e8f0; }
+        .word-card.is-quiz { border-left-color: #f97316; }
+        
+        .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .word-info { display: flex; align-items: center; gap: 10px; }
+        .index-tag { font-size: 11px; color: #94a3b8; font-weight: bold; }
+        .word-text { font-size: 20px; font-weight: 800; color: var(--primary); }
+        
+        .pos-tag { padding: 2px 6px; border-radius: 6px; font-size: 11px; color: white; background: #94a3b8; font-weight: bold; }
         .pos-n { background: #f59e0b; }
         .pos-v { background: #3b82f6; }
         .pos-adj { background: #10b981; }
-        .audio-btn { background: #f1f5f9; border: none; border-radius: 50%; width: 26px; height: 26px; cursor: pointer; color: #2563eb; margin-right: 4px; }
-        .example-ch { color: #94a3b8; font-size: 0.85rem; display: block; margin-top: 4px; }
-        .hidden-text { background: #cbd5e1 !important; color: transparent !important; border-radius: 4px; cursor: pointer; transition: 0.2s; }
-        .hidden-text:hover { background: #adb5bd !important; }
-        .quiz-badge { background: #ffedd5; color: #c05621; padding: 2px 5px; border-radius: 4px; font-size: 10px; margin-left: 4px; }
-        #backToTopBtn { position: fixed; right: 20px; bottom: 20px; display: none; background: var(--primary); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); font-size: 20px; z-index: 1000; text-align: center; line-height: 45px; }
+
+        .chinese-text { font-size: 16px; color: var(--text); margin: 8px 0; display: block; }
+        .example-box { background: #f8fafc; padding: 10px; border-radius: 8px; font-size: 14px; }
+        .example-en { color: #475569; line-height: 1.4; margin-bottom: 5px; }
+        .example-ch { color: #94a3b8; font-size: 13px; }
+
+        /* 遮罩樣式 - 更適合手機點擊 */
+        .hidden-text { background: #cbd5e1 !important; color: transparent !important; border-radius: 6px; cursor: pointer; user-select: none; }
+
+        .action-btns { display: flex; gap: 15px; }
+        .star-icon { font-size: 24px; color: #cbd5e1; }
+        .star-icon.active { color: var(--star); }
+        .audio-btn { background: #f1f5f9; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 18px; }
+
+        #backToTopBtn { position: fixed; right: 15px; bottom: 15px; background: var(--primary); color: white; border: none; border-radius: 50%; width: 50px; height: 50px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 24px; display: none; z-index: 1000; }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <h1>TOEIC必考單字與片語</h1>
+        <h1>TOEIC 學習助手</h1>
         <div class="top-row">
-            <div class="unit-select-row">
-                <span>課程：</span>
-                <select id="unitSelect" onchange="switchUnitSelect()"></select>
-                <span id="quizInfo" style="display:none;" class="quiz-badge">隨機模式中</span>
-            </div>
+            <select id="unitSelect" onchange="switchUnitSelect()" style="padding: 5px 12px; border-radius: 999px;"></select>
             <div class="range-controls">
-                <span>顯示第</span>
-                <input type="number" id="rangeStart" placeholder="1" oninput="render()">
-                <span>到</span>
-                <input type="number" id="rangeEnd" placeholder="末筆" oninput="render()">
-                <span>筆</span>
+                <span>第</span><input type="number" id="rangeStart" placeholder="1" oninput="render()">
+                <span>到</span><input type="number" id="rangeEnd" placeholder="末" oninput="render()"><span>筆</span>
             </div>
-            <button class="btn btn-quiz" onclick="startQuiz()">🎲 隨機抽考</button>
         </div>
         <div class="controls">
-            <input type="text" id="searchInput" placeholder="搜尋..." onkeyup="render()">
+            <input type="text" id="searchInput" placeholder="搜尋英文或中文..." onkeyup="render()">
+            <button class="btn btn-quiz" onclick="startQuiz()">🎲 原地隨機打亂並遮蓋</button>
             <button id="filterBtn" class="btn btn-filter" onclick="toggleFilter()">⭐ 收藏</button>
-            <button class="btn btn-reset" onclick="resetData()">還原單元</button>
-            <button id="hideWordBtn" class="btn btn-hide" onclick="toggleHideWord()">🙈 單字</button>
-            <button id="hideDefBtn" class="btn btn-hide" onclick="toggleHideDef()">🙈 中文/翻譯</button>
+            <button class="btn btn-reset" onclick="resetData()">🔄 重置狀態</button>
+            <button class="btn btn-hide" onclick="toggleHideWord()">🙈 藏單字</button>
+            <button class="btn btn-hide" onclick="toggleHideDef()">🙈 藏翻譯</button>
         </div>
+        <div id="quizInfo" style="display:none; text-align:center; font-size:12px; color:#f97316; margin-top:5px; font-weight:bold;">隨機抽考模式已開啟</div>
     </div>
-    <table>
-        <thead>
-            <tr><th width="8%">#</th><th width="20%">單字</th><th width="25%">定義</th><th width="42%">例句</th><th width="5%"></th></tr>
-        </thead>
-        <tbody id="vocabBody"></tbody>
-    </table>
+
+    <div id="vocabList"></div>
 </div>
 
 <button id="backToTopBtn" onclick="scrollToTop()">↑</button>
