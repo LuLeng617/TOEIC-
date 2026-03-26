@@ -1327,7 +1327,7 @@ function switchUnitSelect() {
 }
 
 function startQuiz() {
-    // 1. 先抓出目前「符合搜尋與收藏條件」的所有單字
+    // 1. 取得目前過濾後的基礎池 (不看範圍，先看搜尋關鍵字跟收藏)
     const query = document.getElementById('searchInput').value.toLowerCase();
     
     let basePool = vocabs
@@ -1342,53 +1342,57 @@ function startQuiz() {
         return;
     }
 
-    // 2. 執行大洗牌 (Shuffle)
+    // 2. 將基礎池徹底洗牌
     quizList = basePool.sort(() => Math.random() - 0.5);
-    quizMode = true;
+    quizMode = true; // 開啟隨機模式標記
     
-    // 自動遮蓋答案
+    // 進入抽考模式，自動遮住單字跟中文
     hideWord = true;
     hideDef = true;
 
-    // 顯示提示
+    // 顯示「隨機模式」的小標籤
     const info = document.getElementById('quizInfo');
     if (info) info.style.display = 'inline';
 
-    render();
+    render(); // 呼叫繪製
 }
+
 		function render() {
-    const query = document.getElementById('searchInput').value.toLowerCase();
-    const body = document.getElementById('vocabBody'); // 如果是表格，請確保 ID 是 vocabBody
+    const body = document.getElementById('vocabBody');
     if (!body) return;
 
-    // 取得範圍數值
+    // 取得輸入框的範圍數值
     const startInput = document.getElementById('rangeStart').value;
     const endInput = document.getElementById('rangeEnd').value;
     const start = startInput === "" ? 1 : Math.max(1, parseInt(startInput, 10));
     const end = endInput === "" ? vocabs.length : Math.min(vocabs.length, parseInt(endInput, 10));
 
-    let displayList = [];
+    let sourcePool = [];
 
+    // --- 關鍵邏輯塊：決定資料源 ---
     if (quizMode) {
-        // 【隨機模式】：從已經洗牌好的 quizList 中，切出你要的範圍
-        displayList = quizList.slice(start - 1, end);
+        // 如果是隨機模式，資料源就是洗牌後的 quizList
+        sourcePool = quizList;
     } else {
-        // 【一般模式】：重新篩選過濾，再切出範圍
-        let filtered = vocabs
+        // 如果是正常模式，重新過濾一次 vocabs
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        sourcePool = vocabs
             .map((v, i) => ({ ...v, _index: i }))
             .filter(v => 
                 (v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query)) &&
                 (onlyShowFavorites ? v.favorite : true)
             );
-        displayList = filtered.slice(start - 1, end);
     }
 
-    // 轉成 HTML (維持 Table 結構)
+    // --- 執行裁切 (不論哪種模式都看範圍框) ---
+    const displayList = sourcePool.slice(start - 1, end);
+
+    // 渲染 HTML
     body.innerHTML = displayList.map((item) => {
         const posKey = item.pos.replace('.', '').replace('/', '').toLowerCase();
-        const wordCellClass = hideWord ? 'hidden-text' : 'word-text';
-        const defHiddenClass = hideDef ? 'hidden-text' : '';
-        const chHiddenClass = hideDef ? 'hidden-text' : 'example-ch';
+        const wordClass = hideWord ? 'hidden-text' : 'word-text';
+        const defClass = hideDef ? 'hidden-text' : '';
+        const exChClass = hideDef ? 'hidden-text' : 'example-ch';
 
         return `
             <tr>
@@ -1396,48 +1400,21 @@ function startQuiz() {
                 <td>
                     <span class="star-icon ${item.favorite ? 'active' : ''}" onclick="toggleStar(${item._index})">★</span>
                     <button class="audio-btn" onclick="speak('${item.word.replace(/'/g, "\\'")}', 0.8)">🔊</button>
-                    <span class="${wordCellClass}" onclick="this.classList.toggle('hidden-text')">${item.word}</span>
+                    <span class="${wordClass}" onclick="this.classList.toggle('hidden-text')">${item.word}</span>
                 </td>
                 <td>
                     <span class="pos-tag pos-${posKey}">${item.pos}</span>
-                    <span class="${defHiddenClass}" onclick="this.classList.toggle('hidden-text')">${item.chinese}</span>
+                    <span class="${defClass}" onclick="this.classList.toggle('hidden-text')">${item.chinese}</span>
                 </td>
                 <td>
                     <div class="example-en">${item.exampleEn}</div>
-                    <div class="${chHiddenClass}" onclick="this.classList.toggle('hidden-text')">${item.exampleCh}</div>
+                    <div class="${exChClass}" onclick="this.classList.toggle('hidden-text')">${item.exampleCh}</div>
                 </td>
             </tr>
         `;
     }).join('');
 }
-
-    // 渲染回原本的表格
-    body.innerHTML = displayList.map((item) => {
-        const posKey = item.pos.replace('.', '').replace('/', '').toLowerCase();
-        const wordCellClass = hideWord ? 'hidden-text' : 'word-text';
-        const defHiddenClass = hideDef ? 'hidden-text' : '';
-        const chHiddenClass = hideDef ? 'hidden-text' : 'example-ch';
-
-        return `
-            <tr>
-                <td>${item._index + 1}</td>
-                <td>
-                    <span class="star-icon ${item.favorite ? 'active' : ''}" onclick="toggleStar(${item._index})">★</span>
-                    <button class="audio-btn" onclick="speak('${item.word.replace(/'/g, "\\'")}', 0.8)">🔊</button>
-                    <span class="${wordCellClass}" onclick="this.classList.toggle('hidden-text')">${item.word}</span>
-                </td>
-                <td>
-                    <span class="pos-tag pos-${posKey}">${item.pos}</span>
-                    <span class="${defHiddenClass}" onclick="this.classList.toggle('hidden-text')">${item.chinese}</span>
-                </td>
-                <td>
-                    <div class="example-en">${item.exampleEn}</div>
-                    <div class="${chHiddenClass}" onclick="this.classList.toggle('hidden-text')">${item.exampleCh}</div>
-                </td>
-            </tr>
-        `;
-    }).join('');
-}
+ 
 		
 // 收藏 / 刪除 / 篩選 / 隱藏
 function toggleStar(idx) {
