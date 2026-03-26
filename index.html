@@ -1326,75 +1326,64 @@ function switchUnitSelect() {
     render();
 }
 
-// 抽考功能：原地隨機
 function startQuiz() {
-    // 1. 取得目前畫面上的搜尋關鍵字與範圍
+    // 1. 先抓出目前「符合搜尋與收藏條件」的所有單字
     const query = document.getElementById('searchInput').value.toLowerCase();
-    const startVal = document.getElementById('rangeStart').value;
-    const endVal = document.getElementById('rangeEnd').value;
     
-    // 預設範圍處理
-    const start = (startVal === "" || parseInt(startVal) < 1) ? 1 : parseInt(startVal, 10);
-    const end = (endVal === "" || parseInt(endVal) > vocabs.length) ? vocabs.length : parseInt(endVal, 10);
-
-    // 2. 篩選出「目前你在畫面上看到的」單字原始索引
-    let currentPool = vocabs
+    let basePool = vocabs
         .map((v, i) => ({ ...v, _index: i }))
         .filter(v => 
             (v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query)) &&
             (onlyShowFavorites ? v.favorite : true)
-        )
-        .slice(start - 1, end);
+        );
 
-    if (currentPool.length === 0) {
-        alert("目前範圍內沒有單字可供隨機！");
+    if (basePool.length === 0) {
+        alert("沒有單字可以隨機！");
         return;
     }
 
-    // 3. 將這些單字打亂順序，存入 quizList
-    quizList = currentPool.sort(() => Math.random() - 0.5);
+    // 2. 執行大洗牌 (Shuffle)
+    quizList = basePool.sort(() => Math.random() - 0.5);
     quizMode = true;
     
-    // 自動開啟隱藏模式（增加挑戰性）
+    // 自動遮蓋答案
     hideWord = true;
     hideDef = true;
 
-    // 顯示隨機模式提示
+    // 顯示提示
     const info = document.getElementById('quizInfo');
     if (info) info.style.display = 'inline';
 
     render();
 }
-
-// 渲染功能：負責畫出表格
-function render() {
+		function render() {
     const query = document.getElementById('searchInput').value.toLowerCase();
-    const body = document.getElementById('vocabBody');
+    const body = document.getElementById('vocabBody'); // 如果是表格，請確保 ID 是 vocabBody
     if (!body) return;
+
+    // 取得範圍數值
+    const startInput = document.getElementById('rangeStart').value;
+    const endInput = document.getElementById('rangeEnd').value;
+    const start = startInput === "" ? 1 : Math.max(1, parseInt(startInput, 10));
+    const end = endInput === "" ? vocabs.length : Math.min(vocabs.length, parseInt(endInput, 10));
 
     let displayList = [];
 
     if (quizMode) {
-        // 【模式 A：隨機模式】直接顯示打亂後的 quizList，不跑 slice 範圍裁切
-        displayList = quizList;
+        // 【隨機模式】：從已經洗牌好的 quizList 中，切出你要的範圍
+        displayList = quizList.slice(start - 1, end);
     } else {
-        // 【模式 B：一般模式】讀取輸入框範圍，執行裁切
-        const startVal = document.getElementById('rangeStart').value;
-        const endVal = document.getElementById('rangeEnd').value;
-        const start = startVal === "" ? 1 : Math.max(1, parseInt(startVal, 10));
-        const end = endInput = endVal === "" ? vocabs.length : Math.min(vocabs.length, parseInt(endVal, 10));
-
+        // 【一般模式】：重新篩選過濾，再切出範圍
         let filtered = vocabs
             .map((v, i) => ({ ...v, _index: i }))
             .filter(v => 
                 (v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query)) &&
                 (onlyShowFavorites ? v.favorite : true)
             );
-        
         displayList = filtered.slice(start - 1, end);
     }
 
-    // 將 displayList 轉換成 HTML 語法
+    // 轉成 HTML (維持 Table 結構)
     body.innerHTML = displayList.map((item) => {
         const posKey = item.pos.replace('.', '').replace('/', '').toLowerCase();
         const wordCellClass = hideWord ? 'hidden-text' : 'word-text';
