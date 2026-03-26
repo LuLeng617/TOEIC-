@@ -41,25 +41,64 @@
         #backToTopBtn { position: fixed; right: 20px; bottom: 20px; display: none; background: var(--primary); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); font-size: 20px; z-index: 1000; text-align: center; line-height: 45px; }
     </style>
 	<style>
-  /* 手機版自動轉卡片 */
-  @media (max-width: 600px) {
-    table, thead, tbody, th, td, tr { 
-      display: block; 
-    }
-    thead tr { position: absolute; top: -9999px; left: -9999px; }
-    tr { border: 1px solid #ccc; margin-bottom: 10px; border-radius: 8px; padding: 10px; background: #fff; }
-    td { border: none; position: relative; padding-left: 0; }
-    .word-text { font-size: 1.2rem; color: #2563eb; display: block; }
-  }
+/* ==========================================
+   手機版響應式優化 (Rmd 專用)
+   ========================================== */
+
+/* 當螢幕寬度小於 600px 時執行 */
+@media (max-width: 600px) {
   
-  /* 遮罩效果 */
-  .hidden-text {
-    background-color: #cbd5e1 !important;
-    color: transparent !important;
-    cursor: pointer;
-    border-radius: 4px;
-    display: inline-block;
-  }
+  /* 1. 容器與區塊優化 */
+  body { padding: 10px; background-color: #f8fafc; }
+  .container { padding: 10px; border-radius: 12px; }
+  
+  /* 2. 控制區塊優化 (放大按鈕、調整搜尋框) */
+  .header h1 { font-size: 1.3rem; }
+  .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  input#searchInput { grid-column: span 2; padding: 12px; font-size: 16px; border-radius: 8px; }
+  .btn { padding: 12px; font-size: 14px; border-radius: 8px; justify-content: center; }
+  
+  /* 3. 強迫表格轉為卡片 (關鍵邏輯) */
+  table, thead, tbody, th, td, tr { display: block; }
+  
+  /* 隱藏原本的表頭 (#, 單字, 定義...) */
+  thead tr { position: absolute; top: -9999px; left: -9999px; }
+  
+  /* 每一列 (tr) 變成一個卡片 */
+  tr { border: none; margin-bottom: 15px; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.05); padding: 15px; position: relative; border-left: 5px solid #e2e8f0; }
+  
+  /* 當是隨機模式時，卡片邊框變色 */
+  tr.is-quiz { border-left-color: #f97316; }
+
+  /* 調整欄位 (td) 的排列 */
+  td { border: none; padding: 0; margin-bottom: 8px; position: relative; }
+  
+  /* 4. 單字與星星、發音按鈕的排版 */
+  /* # 編號 */
+  td:nth-of-type(1) { font-size: 11px; color: #94a3b8; font-weight: bold; margin-bottom: 5px; }
+  
+  /* 單字欄位 */
+  td:nth-of-type(2) { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .word-text { font-size: 1.4rem; font-weight: 800; color: #2563eb; }
+  
+  /* 星星星和發音按鈕放大，方便點選 */
+  .star-icon { font-size: 24px; }
+  .audio-btn { width: 35px; height: 35px; font-size: 18px; background: #f1f5f9; border-radius: 50%; }
+
+  /* 5. 定義與例句的排版 */
+  /* 定義欄位 */
+  td:nth-of-type(3) { font-size: 16px; margin: 10px 0; display: block; color: #1e293b; }
+  .pos-tag { padding: 2px 6px; border-radius: 6px; font-size: 11px; }
+
+  /* 例句欄位變成一個灰底區塊 */
+  td:nth-of-type(4) { background: #f8fafc; padding: 12px; border-radius: 8px; font-size: 14px; margin-top: 10px; }
+  .example-en { color: #475569; line-height: 1.4; margin-bottom: 5px; }
+  .example-ch { color: #94a3b8; font-size: 13px; }
+
+  /* 6. 優化遮罩樣式，更適合手機開牌 */
+  .hidden-text { background-color: #cbd5e1 !important; color: transparent !important; cursor: pointer; border-radius: 6px; user-select: none; transition: 0.2s; }
+  .hidden-text:hover { background-color: #adb5bd !important; }
+}
 </style>
 </head>
 <body>
