@@ -40,6 +40,27 @@
         .quiz-badge { background: #ffedd5; color: #c05621; padding: 2px 5px; border-radius: 4px; font-size: 10px; margin-left: 4px; }
         #backToTopBtn { position: fixed; right: 20px; bottom: 20px; display: none; background: var(--primary); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); font-size: 20px; z-index: 1000; text-align: center; line-height: 45px; }
     </style>
+	<style>
+  /* 手機版自動轉卡片 */
+  @media (max-width: 600px) {
+    table, thead, tbody, th, td, tr { 
+      display: block; 
+    }
+    thead tr { position: absolute; top: -9999px; left: -9999px; }
+    tr { border: 1px solid #ccc; margin-bottom: 10px; border-radius: 8px; padding: 10px; background: #fff; }
+    td { border: none; position: relative; padding-left: 0; }
+    .word-text { font-size: 1.2rem; color: #2563eb; display: block; }
+  }
+  
+  /* 遮罩效果 */
+  .hidden-text {
+    background-color: #cbd5e1 !important;
+    color: transparent !important;
+    cursor: pointer;
+    border-radius: 4px;
+    display: inline-block;
+  }
+</style>
 </head>
 <body>
 <div class="container">
