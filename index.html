@@ -1326,63 +1326,63 @@ function switchUnitSelect() {
     render();
 }
 
+// 抽考功能：原地隨機
 function startQuiz() {
-    // 1. 抓取目前搜尋與範圍的參數
+    // 1. 取得目前畫面上的搜尋關鍵字與範圍
     const query = document.getElementById('searchInput').value.toLowerCase();
-    const startInput = document.getElementById('rangeStart').value;
-    const endInput = document.getElementById('rangeEnd').value;
+    const startVal = document.getElementById('rangeStart').value;
+    const endVal = document.getElementById('rangeEnd').value;
     
-    const start = startInput === "" ? 1 : Math.max(1, parseInt(startInput, 10));
-    const end = endInput === "" ? vocabs.length : Math.min(vocabs.length, parseInt(endInput, 10));
+    // 預設範圍處理
+    const start = (startVal === "" || parseInt(startVal) < 1) ? 1 : parseInt(startVal, 10);
+    const end = (endVal === "" || parseInt(endVal) > vocabs.length) ? vocabs.length : parseInt(endVal, 10);
 
-    // 2. 找出「目前符合條件」的原始索引清單
-    let currentVisibleIndices = vocabs
+    // 2. 篩選出「目前你在畫面上看到的」單字原始索引
+    let currentPool = vocabs
         .map((v, i) => ({ ...v, _index: i }))
         .filter(v => 
             (v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query)) &&
             (onlyShowFavorites ? v.favorite : true)
         )
-        .slice(start - 1, end)
-        .map(v => v._index);
+        .slice(start - 1, end);
 
-    if (currentVisibleIndices.length === 0) {
+    if (currentPool.length === 0) {
         alert("目前範圍內沒有單字可供隨機！");
         return;
     }
 
-    // 3. 打亂並開啟模式
-    quizList = [...currentVisibleIndices].sort(() => Math.random() - 0.5);
+    // 3. 將這些單字打亂順序，存入 quizList
+    quizList = currentPool.sort(() => Math.random() - 0.5);
     quizMode = true;
     
-    // 開啟隨機時自動遮蓋（如果你不想要自動遮，就把下面兩行刪掉）
+    // 自動開啟隱藏模式（增加挑戰性）
     hideWord = true;
     hideDef = true;
 
-    // 顯示提示
+    // 顯示隨機模式提示
     const info = document.getElementById('quizInfo');
     if (info) info.style.display = 'inline';
 
     render();
 }
 
-// 🔥 修正後的渲染邏輯
+// 渲染功能：負責畫出表格
 function render() {
     const query = document.getElementById('searchInput').value.toLowerCase();
-    const body = document.getElementById('vocabBody'); // 確保 ID 是 vocabBody
+    const body = document.getElementById('vocabBody');
     if (!body) return;
-
-    const startInput = document.getElementById('rangeStart').value;
-    const endInput = document.getElementById('rangeEnd').value;
 
     let displayList = [];
 
     if (quizMode) {
-        // 【隨機模式】：照著打亂後的順序排
-        displayList = quizList.map(idx => ({ ...vocabs[idx], _index: idx }));
+        // 【模式 A：隨機模式】直接顯示打亂後的 quizList，不跑 slice 範圍裁切
+        displayList = quizList;
     } else {
-        // 【一般模式】：照原本順序 + 範圍裁切
-        const start = startInput === "" ? 1 : Math.max(1, parseInt(startInput, 10));
-        const end = endInput === "" ? vocabs.length : Math.min(vocabs.length, parseInt(endInput, 10));
+        // 【模式 B：一般模式】讀取輸入框範圍，執行裁切
+        const startVal = document.getElementById('rangeStart').value;
+        const endVal = document.getElementById('rangeEnd').value;
+        const start = startVal === "" ? 1 : Math.max(1, parseInt(startVal, 10));
+        const end = endInput = endVal === "" ? vocabs.length : Math.min(vocabs.length, parseInt(endVal, 10));
 
         let filtered = vocabs
             .map((v, i) => ({ ...v, _index: i }))
@@ -1393,6 +1393,34 @@ function render() {
         
         displayList = filtered.slice(start - 1, end);
     }
+
+    // 將 displayList 轉換成 HTML 語法
+    body.innerHTML = displayList.map((item) => {
+        const posKey = item.pos.replace('.', '').replace('/', '').toLowerCase();
+        const wordCellClass = hideWord ? 'hidden-text' : 'word-text';
+        const defHiddenClass = hideDef ? 'hidden-text' : '';
+        const chHiddenClass = hideDef ? 'hidden-text' : 'example-ch';
+
+        return `
+            <tr>
+                <td>${item._index + 1}</td>
+                <td>
+                    <span class="star-icon ${item.favorite ? 'active' : ''}" onclick="toggleStar(${item._index})">★</span>
+                    <button class="audio-btn" onclick="speak('${item.word.replace(/'/g, "\\'")}', 0.8)">🔊</button>
+                    <span class="${wordCellClass}" onclick="this.classList.toggle('hidden-text')">${item.word}</span>
+                </td>
+                <td>
+                    <span class="pos-tag pos-${posKey}">${item.pos}</span>
+                    <span class="${defHiddenClass}" onclick="this.classList.toggle('hidden-text')">${item.chinese}</span>
+                </td>
+                <td>
+                    <div class="example-en">${item.exampleEn}</div>
+                    <div class="${chHiddenClass}" onclick="this.classList.toggle('hidden-text')">${item.exampleCh}</div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
 
     // 渲染回原本的表格
     body.innerHTML = displayList.map((item) => {
