@@ -1327,7 +1327,7 @@ function switchUnitSelect() {
 }
 
 function startQuiz() {
-    // 1. 強制抓取最新的搜尋與範圍值
+    // 1. 抓取目前搜尋與範圍的參數
     const query = document.getElementById('searchInput').value.toLowerCase();
     const startInput = document.getElementById('rangeStart').value;
     const endInput = document.getElementById('rangeEnd').value;
@@ -1335,35 +1335,32 @@ function startQuiz() {
     const start = startInput === "" ? 1 : Math.max(1, parseInt(startInput, 10));
     const end = endInput === "" ? vocabs.length : Math.min(vocabs.length, parseInt(endInput, 10));
 
-    // 2. 篩選目前畫面上「你所見到的」單字原始索引
+    // 2. 找出「目前符合條件」的原始索引清單
     let currentVisibleIndices = vocabs
         .map((v, i) => ({ ...v, _index: i }))
-        .filter(v => {
-            const matchQuery = v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query);
-            const matchFav = onlyShowFavorites ? v.favorite : true;
-            return matchQuery && matchFav;
-        })
+        .filter(v => 
+            (v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query)) &&
+            (onlyShowFavorites ? v.favorite : true)
+        )
         .slice(start - 1, end)
         .map(v => v._index);
-
-    console.log("隨機索引池：", currentVisibleIndices); // 偵錯用
 
     if (currentVisibleIndices.length === 0) {
         alert("目前範圍內沒有單字可供隨機！");
         return;
     }
 
-    // 3. 設定隨機模式與打亂
+    // 3. 打亂並開啟模式
     quizList = [...currentVisibleIndices].sort(() => Math.random() - 0.5);
     quizMode = true;
     
-    // 自動遮蓋答案
+    // 開啟隨機時自動遮蓋（如果你不想要自動遮，就把下面兩行刪掉）
     hideWord = true;
     hideDef = true;
 
-    // 顯示隨機模式提示
+    // 顯示提示
     const info = document.getElementById('quizInfo');
-    if (info) info.style.display = 'block';
+    if (info) info.style.display = 'inline';
 
     render();
 }
@@ -1371,27 +1368,25 @@ function startQuiz() {
 // 🔥 修正後的渲染邏輯
 function render() {
     const query = document.getElementById('searchInput').value.toLowerCase();
-    const body = document.getElementById('vocabBody');
-    
+    const body = document.getElementById('vocabBody'); // 確保 ID 是 vocabBody
+    if (!body) return;
+
     const startInput = document.getElementById('rangeStart').value;
     const endInput = document.getElementById('rangeEnd').value;
 
     let displayList = [];
 
     if (quizMode) {
-        // 【隨機模式】：直接依照打亂後的索引清單來顯示
-        displayList = quizList.map(originalIdx => ({
-            ...vocabs[originalIdx],
-            _index: originalIdx
-        }));
+        // 【隨機模式】：照著打亂後的順序排
+        displayList = quizList.map(idx => ({ ...vocabs[idx], _index: idx }));
     } else {
-        // 【一般模式】：先過濾搜尋/收藏，再根據範圍切片
+        // 【一般模式】：照原本順序 + 範圍裁切
         const start = startInput === "" ? 1 : Math.max(1, parseInt(startInput, 10));
         const end = endInput === "" ? vocabs.length : Math.min(vocabs.length, parseInt(endInput, 10));
 
         let filtered = vocabs
             .map((v, i) => ({ ...v, _index: i }))
-            .filter(v =>
+            .filter(v => 
                 (v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query)) &&
                 (onlyShowFavorites ? v.favorite : true)
             );
@@ -1399,10 +1394,9 @@ function render() {
         displayList = filtered.slice(start - 1, end);
     }
 
-    // 渲染表格內容
-    body.innerHTML = displayList.map((item, idx) => {
+    // 渲染回原本的表格
+    body.innerHTML = displayList.map((item) => {
         const posKey = item.pos.replace('.', '').replace('/', '').toLowerCase();
-	// 根據開關狀態決定是否隱藏
         const wordCellClass = hideWord ? 'hidden-text' : 'word-text';
         const defHiddenClass = hideDef ? 'hidden-text' : '';
         const chHiddenClass = hideDef ? 'hidden-text' : 'example-ch';
@@ -1427,7 +1421,6 @@ function render() {
         `;
     }).join('');
 }
-
 		
 // 收藏 / 刪除 / 篩選 / 隱藏
 function toggleStar(idx) {
