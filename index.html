@@ -1326,40 +1326,45 @@ function switchUnitSelect() {
     render();
 }
 
-// 抽考功能
 function startQuiz() {
-    // 取得目前搜尋與範圍的參數
+    // 1. 取得當前的輸入值
     const query = document.getElementById('searchInput').value.toLowerCase();
-    const startInput = document.getElementById('rangeStart').value;
-    const endInput = document.getElementById('rangeEnd').value;
+    const startVal = document.getElementById('rangeStart').value;
+    const endVal = document.getElementById('rangeEnd').value;
     
-    const start = startInput === "" ? 1 : Math.max(1, parseInt(startInput, 10));
-    const end = endInput === "" ? vocabs.length : Math.min(vocabs.length, parseInt(endInput, 10));
+    // 2. 計算範圍（防錯處理）
+    const start = (startVal === "" || parseInt(startVal) < 1) ? 1 : parseInt(startVal, 10);
+    const end = (endVal === "" || parseInt(endVal) > vocabs.length) ? vocabs.length : parseInt(endVal, 10);
 
-    // 找出目前「過濾後且在範圍內」的原始索引
+    // 3. 找出目前「符合搜尋條件」且「在範圍內」的單字原始索引
+    // 注意：這裡必須先 map 索引，再 filter，最後才 slice
     let currentVisibleIndices = vocabs
         .map((v, i) => ({ ...v, _index: i }))
-        .filter(v =>
+        .filter(v => 
             (v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query)) &&
             (onlyShowFavorites ? v.favorite : true)
         )
         .slice(start - 1, end)
         .map(v => v._index);
 
+    // 檢查是否有單字可隨機
     if (currentVisibleIndices.length === 0) {
-        alert("目前畫面沒有單字可以隨機！");
+        alert("目前範圍內沒有單字可以隨機！");
         return;
     }
 
-    // 直接打亂這些索引
-    quizList = currentVisibleIndices.sort(() => Math.random() - 0.5);
+    // 4. 打亂順序並開啟模式
+    quizList = [...currentVisibleIndices].sort(() => Math.random() - 0.5);
     quizMode = true;
     
-    // 自動開啟「隱藏單字」與「隱藏中文」功能（抽考模式通常需要遮住答案）
+    // 自動遮蓋答案（增加挑戰性）
     hideWord = true;
     hideDef = true;
 
-    document.getElementById('quizInfo').style.display = 'inline';
+    // 5. 更新介面提示並重新渲染
+    const quizInfo = document.getElementById('quizInfo');
+    if (quizInfo) quizInfo.style.display = 'block';
+    
     render();
 }
 
