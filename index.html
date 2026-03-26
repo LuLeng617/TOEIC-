@@ -1327,44 +1327,44 @@ function switchUnitSelect() {
 }
 
 function startQuiz() {
-    // 1. 取得當前的輸入值
+    // 1. 強制抓取最新的搜尋與範圍值
     const query = document.getElementById('searchInput').value.toLowerCase();
-    const startVal = document.getElementById('rangeStart').value;
-    const endVal = document.getElementById('rangeEnd').value;
+    const startInput = document.getElementById('rangeStart').value;
+    const endInput = document.getElementById('rangeEnd').value;
     
-    // 2. 計算範圍（防錯處理）
-    const start = (startVal === "" || parseInt(startVal) < 1) ? 1 : parseInt(startVal, 10);
-    const end = (endVal === "" || parseInt(endVal) > vocabs.length) ? vocabs.length : parseInt(endVal, 10);
+    const start = startInput === "" ? 1 : Math.max(1, parseInt(startInput, 10));
+    const end = endInput === "" ? vocabs.length : Math.min(vocabs.length, parseInt(endInput, 10));
 
-    // 3. 找出目前「符合搜尋條件」且「在範圍內」的單字原始索引
-    // 注意：這裡必須先 map 索引，再 filter，最後才 slice
+    // 2. 篩選目前畫面上「你所見到的」單字原始索引
     let currentVisibleIndices = vocabs
         .map((v, i) => ({ ...v, _index: i }))
-        .filter(v => 
-            (v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query)) &&
-            (onlyShowFavorites ? v.favorite : true)
-        )
+        .filter(v => {
+            const matchQuery = v.word.toLowerCase().includes(query) || (v.chinese || "").includes(query);
+            const matchFav = onlyShowFavorites ? v.favorite : true;
+            return matchQuery && matchFav;
+        })
         .slice(start - 1, end)
         .map(v => v._index);
 
-    // 檢查是否有單字可隨機
+    console.log("隨機索引池：", currentVisibleIndices); // 偵錯用
+
     if (currentVisibleIndices.length === 0) {
-        alert("目前範圍內沒有單字可以隨機！");
+        alert("目前範圍內沒有單字可供隨機！");
         return;
     }
 
-    // 4. 打亂順序並開啟模式
+    // 3. 設定隨機模式與打亂
     quizList = [...currentVisibleIndices].sort(() => Math.random() - 0.5);
     quizMode = true;
     
-    // 自動遮蓋答案（增加挑戰性）
+    // 自動遮蓋答案
     hideWord = true;
     hideDef = true;
 
-    // 5. 更新介面提示並重新渲染
-    const quizInfo = document.getElementById('quizInfo');
-    if (quizInfo) quizInfo.style.display = 'block';
-    
+    // 顯示隨機模式提示
+    const info = document.getElementById('quizInfo');
+    if (info) info.style.display = 'block';
+
     render();
 }
 
