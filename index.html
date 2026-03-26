@@ -1431,22 +1431,32 @@ function render() {
 }
 
 
-// --- 其他功能 (發音、頂部、收藏) ---
+// --- 基礎互動功能 ---
 function toggleStar(idx) { vocabs[idx].favorite = !vocabs[idx].favorite; save(); }
 function toggleFilter() { onlyShowFavorites = !onlyShowFavorites; document.getElementById('filterBtn').classList.toggle('active'); render(); }
 function toggleHideWord() { hideWord = !hideWord; render(); }
 function toggleHideDef() { hideDef = !hideDef; render(); }
-function resetData() { if (confirm("確定還原預設？")) { vocabs = [...unitDefaults[currentUnit]]; quizMode = false; document.getElementById('quizInfo').style.display='none'; save(); } }
-function speak(t, r) { window.speechSynthesis.cancel(); const m = new SpeechSynthesisUtterance(t); m.rate = r; window.speechSynthesis.speak(m); }
+function resetData() { 
+    if (confirm("確定重置此單元狀態？")) { 
+        vocabs = [...unitDefaults[currentUnit]]; 
+        quizMode = false; 
+        hideWord = false; 
+        hideDef = false; 
+        document.getElementById('quizInfo').style.display='none'; 
+        save(); 
+    } 
+}
+function speak(t, r) { window.speechSynthesis.cancel(); const m = new SpeechSynthesisUtterance(t); m.rate = r; m.lang = 'en-US'; window.speechSynthesis.speak(m); }
 function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
-// 初始執行
+window.onscroll = function() {
+    const btn = document.getElementById("backToTopBtn");
+    btn.style.display = (window.pageYOffset > 300) ? "block" : "none";
+};
+
+// 啟動
 initUnitSelect();
 render();
-
-
 </script>
-
-
 </body>
 </html>
