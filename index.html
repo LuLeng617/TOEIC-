@@ -112,11 +112,11 @@
                 <span id="quizInfo" style="display:none;" class="quiz-badge">隨機模式中</span>
             </div>
             <div class="range-controls">
-                <span>顯示第</span>
-                <input type="number" id="rangeStart" placeholder="">
-                <span>到</span>
-                <input type="number" id="rangeEnd" placeholder="">
-                <span>筆</span>
+                <span>第</span>
+				<input type="number" id="rangeStart" placeholder="1" oninput="render()">
+				<span>到</span>
+				<input type="number" id="rangeEnd" placeholder="末" oninput="render()">
+				<span>筆</span>
             </div>
             <button class="btn btn-quiz" onclick="startRandom()">🎲 隨機</button>
         </div>
