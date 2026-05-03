@@ -1923,11 +1923,10 @@ function render() {
     let displayList = [];
 
     if (quizMode) {
-        // 🔥 關鍵修正：如果是隨機模式，直接使用打亂後的清單，不要再 slice
-        // 因為 quizList 已經是你在 startQuiz 時根據範圍挑選並打亂的結果了
+        // 隨機模式：直接使用打亂後的清單
         displayList = quizList;
     } else {
-        // 一般模式：才需要讀取範圍並裁切
+        // 一般模式：讀取範圍並裁切
         const startInput = document.getElementById('rangeStart').value;
         const endInput = document.getElementById('rangeEnd').value;
         const start = startInput === "" ? 1 : Math.max(1, parseInt(startInput, 10));
@@ -1947,11 +1946,16 @@ function render() {
         const defClass = hideDef ? 'hidden-text' : '';
         const exChClass = hideDef ? 'hidden-text' : 'example-ch';
 
+        // 預先處理字串中的單引號，避免破壞 HTML onclick 屬性
+        const safeWord = item.word.replace(/'/g, "\\'");
+        const safeExample = item.exampleEn.replace(/'/g, "\\'");
+
         return `
             <tr>
-                <td># ${item._index + 1}</td>  <td>
+                <td># ${item._index + 1}</td>
+                <td>
                     <span class="star-icon ${item.favorite ? 'active' : ''}" onclick="toggleStar(${item._index})">★</span>
-                    <button class="audio-btn" onclick="speak('${item.word.replace(/'/g, "\\'")}', 0.8)">🔊</button>
+                    <button class="audio-btn" onclick="speak('${safeWord}', 0.8)">🔊</button>
                     <span class="${wordClass}" onclick="this.classList.toggle('hidden-text')">${item.word}</span>
                 </td>
                 <td>
@@ -1959,7 +1963,10 @@ function render() {
                     <span class="${defClass}" onclick="this.classList.toggle('hidden-text')">${item.chinese}</span>
                 </td>
                 <td>
-                    <div class="example-en">${item.exampleEn}</div>
+                    <div class="example-en">
+                        <button class="audio-btn" onclick="speak('${safeExample}', 0.8)">🔊</button>
+                        ${item.exampleEn}
+                    </div>
                     <div class="${exChClass}" onclick="this.classList.toggle('hidden-text')">${item.exampleCh}</div>
                 </td>
             </tr>
